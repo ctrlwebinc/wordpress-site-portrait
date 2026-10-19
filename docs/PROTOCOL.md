@@ -109,7 +109,7 @@ network only; `@authority` (§5.1) is compared with the main site's host.
 ## 3. Discovery
 
 The administrator enters the **service base URL** (for example
-`https://commandes.ctrlweb.ca`). The plugin normalises it to its origin
+`https://service.example`). The plugin normalises it to its origin
 (scheme + host + optional port) and fetches:
 
 ```
@@ -135,16 +135,16 @@ Rules for the site:
   "protocol": "site-portrait",
   "protocol_versions": ["1"],
   "service": {
-    "name": "Ctrlweb — hosting assessment",
+    "name": "Example Hosting — site assessment",
     "description": "Recommends a hosting plan suited to your site.",
-    "homepage": "https://commandes.ctrlweb.ca/",
-    "privacy_policy_url": "https://commandes.ctrlweb.ca/privacy",
-    "terms_url": "https://commandes.ctrlweb.ca/terms",
+    "homepage": "https://service.example/",
+    "privacy_policy_url": "https://service.example/privacy",
+    "terms_url": "https://service.example/terms",
     "contact": "support@example.com"
   },
-  "authorization_endpoint": "https://commandes.ctrlweb.ca/site-portrait/authorize",
-  "token_endpoint": "https://commandes.ctrlweb.ca/site-portrait/token",
-  "revocation_endpoint": "https://commandes.ctrlweb.ca/site-portrait/revoke",
+  "authorization_endpoint": "https://service.example/site-portrait/authorize",
+  "token_endpoint": "https://service.example/site-portrait/token",
+  "revocation_endpoint": "https://service.example/site-portrait/revoke",
   "scopes_supported": ["core", "plugins", "themes", "server", "database", "content", "users_counts"],
   "scopes_requested": ["core", "plugins", "themes", "server", "database", "content", "users_counts"],
   "scope_reasons": {

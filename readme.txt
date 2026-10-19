@@ -1,5 +1,5 @@
 === Site Portrait ===
-Contributors: ctrlweb
+Contributors: ctrlwebinc
 Tags: hosting, site health, system info, migration, server
 Requires at least: 6.4
 Tested up to: 7.1
@@ -44,7 +44,7 @@ What is sent, to whom and when:
 * **While connected:** the service may request the portrait. The site only answers signed requests and only returns the categories you ticked (see the Description for what each contains). On a multisite network, the list of site addresses is also available to the service.
 * **When the administrator clicks "Disconnect" or deletes the plugin:** the site notifies the service that the connection ended (site address and connection identifier).
 
-The service's own terms of use and privacy policy apply to the data it receives. Their addresses are shown before you connect and on the settings page. For the service operated by Ctrlweb (`https://commandes.ctrlweb.ca`), see https://ctrlweb.ca.
+The service's own terms of use and privacy policy apply to the data it receives. Their addresses are shown before you connect and on the settings page.
 
 == Frequently Asked Questions ==
 

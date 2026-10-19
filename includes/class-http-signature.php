@@ -103,19 +103,7 @@ final class Http_Signature {
 
 		$request_context = null;
 		if ( null !== $request_signature ) {
-			$items[]         = Structured_Fields::string_item(
-				'signature',
-				array(
-					'req' => array(
-						'type'  => 'boolean',
-						'value' => true,
-					),
-					'key' => array(
-						'type'  => 'string',
-						'value' => self::LABEL,
-					),
-				)
-			);
+			$items[]         = self::request_binding_item();
 			$request_context = array( 'signature' => array( self::LABEL => $request_signature ) );
 		}
 
@@ -257,10 +245,23 @@ final class Http_Signature {
 		if ( empty( $inputs[ self::LABEL ] ) || empty( $signatures[ self::LABEL ] ) || 'bytes' !== $signatures[ self::LABEL ]['type'] || 'inner_list' !== $inputs[ self::LABEL ]['type'] ) {
 			throw new Signature_Error( 'site_portrait_signature_missing', 'The response is not signed.' );
 		}
+		// A 2xx response to a signed request must be bound to it; error
+		// responses to unauthenticated requests are not (PROTOCOL.md §5.2).
 		$input   = $inputs[ self::LABEL ];
-		$covered = array_slice( array_column( $input['value'], 'value' ), 0, count( self::RESP_LIST ) );
-		if ( self::RESP_LIST !== $covered ) {
+		$unbound = array_map( array( Structured_Fields::class, 'string_item' ), self::RESP_LIST );
+		$bound   = array_merge( $unbound, array( self::request_binding_item() ) );
+		if ( null === $request_signature ) {
+			$allowed = array( $unbound );
+		} elseif ( $status >= 200 && $status < 300 ) {
+			$allowed = array( $bound );
+		} else {
+			$allowed = array( $bound, $unbound );
+		}
+		if ( ! in_array( $input['value'], $allowed, true ) ) {
 			throw new Signature_Error( 'site_portrait_signature_malformed', 'Unexpected covered components in response.' );
+		}
+		if ( $input['value'] === $unbound ) {
+			$request_signature = null;
 		}
 		if ( ! hash_equals( Crypto::content_digest( $body ), trim( $headers['content-digest'] ?? '' ) ) ) {
 			throw new Signature_Error( 'site_portrait_digest_mismatch', 'Content-Digest does not match the body.', 400 );
@@ -280,6 +281,28 @@ final class Http_Signature {
 			throw new Signature_Error( 'site_portrait_signature_invalid', 'Response signature verification failed.' );
 		}
 		return $kid;
+	}
+
+	/**
+	 * Covered component binding a response to the request signature:
+	 * "signature";req;key="sp".
+	 *
+	 * @return array
+	 */
+	private static function request_binding_item() {
+		return Structured_Fields::string_item(
+			'signature',
+			array(
+				'req' => array(
+					'type'  => 'boolean',
+					'value' => true,
+				),
+				'key' => array(
+					'type'  => 'string',
+					'value' => self::LABEL,
+				),
+			)
+		);
 	}
 
 	/**

@@ -365,9 +365,14 @@ export function verifyResponse(status, headers, body, requestSignature, lookup) 
   if (!input || !sig || input.type !== 'inner_list' || sig.type !== 'bytes') {
     throw new SignatureError('site_portrait_signature_missing', 'The response is not signed.');
   }
-  const covered = input.value.map((i) => i.value);
-  if (JSON.stringify(covered.slice(0, 3)) !== JSON.stringify(RESP_LIST)) {
-    throw new SignatureError('site_portrait_signature_malformed', 'Unexpected covered components.');
+  // Exactly the §5.2 list, plus the request binding when the request was signed.
+  const covered = input.value.map((i) => i.value + [...i.params].map(([k, v]) => `;${k}=${v.value}`).join(''));
+  // Error responses to unauthenticated requests are not bound (§5.2).
+  const bound = JSON.stringify([...RESP_LIST, 'signature;req=true;key=sp']);
+  const unbound = JSON.stringify(RESP_LIST);
+  const allowed = !requestSignature ? [unbound] : status >= 200 && status < 300 ? [bound] : [bound, unbound];
+  if (!allowed.includes(JSON.stringify(covered))) {
+    throw new SignatureError('site_portrait_signature_malformed', `Unexpected covered components: ${covered.join(' ')}.`);
   }
   if (h['content-digest'] !== contentDigest(body)) {
     throw new SignatureError('site_portrait_digest_mismatch', 'Content-Digest mismatch.', 400);
@@ -376,7 +381,7 @@ export function verifyResponse(status, headers, body, requestSignature, lookup) 
   const jwk = lookup(kid);
   const pub = jwk && publicKeyFromJwk(jwk);
   if (!pub) throw new SignatureError('site_portrait_unknown_key', `Unknown response key ${kid}.`);
-  const base = signatureBase(input.value, input.params, { '@status': String(status), headers: h }, requestSignature);
+  const base = signatureBase(input.value, input.params, { '@status': String(status), headers: h }, covered.length > 3 ? requestSignature : null);
   if (base === null || !crypto.verify(null, Buffer.from(base), pub, sig.value)) {
     throw new SignatureError('site_portrait_signature_invalid', 'Response signature verification failed.');
   }

@@ -31,6 +31,16 @@ final class Rest_Api {
 	private static $auth = null;
 
 	/**
+	 * Request already authenticated, and its result.
+	 *
+	 * WordPress calls permission callbacks again (rest_send_allow_header());
+	 * the nonce must not be consumed twice.
+	 *
+	 * @var array{0: WP_REST_Request, 1: true|WP_Error}|null
+	 */
+	private static $checked = null;
+
+	/**
 	 * Seconds to send in Retry-After, if rate limited.
 	 *
 	 * @var int|null
@@ -119,16 +129,27 @@ final class Rest_Api {
 	 * @return true|WP_Error
 	 */
 	public static function authenticate( WP_REST_Request $request ) {
-		self::$auth = null;
-		$ip         = self::client_ip();
-		$allowlist  = Store::settings()['ip_allowlist'];
+		if ( null !== self::$checked && self::$checked[0] === $request ) {
+			return self::$checked[1];
+		}
+		self::$auth    = null;
+		$result        = self::check_request( $request );
+		self::$checked = array( $request, $result );
+		return $result;
+	}
+
+	/**
+	 * Performs the checks of authenticate().
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return true|WP_Error
+	 */
+	private static function check_request( WP_REST_Request $request ) {
+		$ip        = self::client_ip();
+		$allowlist = Store::settings()['ip_allowlist'];
 
 		if ( ! empty( $allowlist ) && ! Ip_Allowlist::matches( $ip, $allowlist ) ) {
 			return self::error( 'site_portrait_ip_not_allowed', 'Source IP address not allowed.', 403 );
-		}
-		if ( Access_Log::count_failures_last_hour( $ip ) >= (int) apply_filters( 'site_portrait_failure_limit', self::FAILURE_LIMIT ) ) {
-			self::$retry_after = HOUR_IN_SECONDS;
-			return self::error( 'site_portrait_rate_limited', 'Too many failed requests.', 429 );
 		}
 		if ( ! is_ssl() && ! Plugin::is_dev_mode() ) {
 			return self::error( 'site_portrait_https_required', 'HTTPS is required.', 403 );
@@ -136,7 +157,7 @@ final class Rest_Api {
 
 		$target = self::request_target();
 		if ( null === $target ) {
-			return self::error( 'site_portrait_signature_malformed', 'Invalid request target.', 401 );
+			return self::failure( $ip, self::error( 'site_portrait_signature_malformed', 'Invalid request target.', 401 ) );
 		}
 
 		$headers = array();
@@ -149,7 +170,7 @@ final class Rest_Api {
 
 		if ( 'GET' !== $request->get_method() ) {
 			if ( ! isset( $headers['content-digest'] ) || ! hash_equals( Crypto::content_digest( $request->get_body() ), trim( $headers['content-digest'] ) ) ) {
-				return self::error( 'site_portrait_digest_mismatch', 'Content-Digest does not match the body.', 400 );
+				return self::failure( $ip, self::error( 'site_portrait_digest_mismatch', 'Content-Digest does not match the body.', 400 ) );
 			}
 		}
 
@@ -165,11 +186,11 @@ final class Rest_Api {
 				array( Pairing::class, 'service_key' )
 			);
 		} catch ( Signature_Error $e ) {
-			return self::error( $e->get_error_code(), $e->getMessage(), $e->get_status() );
+			return self::failure( $ip, self::error( $e->get_error_code(), $e->getMessage(), $e->get_status() ) );
 		}
 
 		if ( ! Nonce_Store::consume( $auth['kid'], $auth['nonce'], $auth['expires'] ) ) {
-			return self::error( 'site_portrait_replay', 'Nonce already used.', 401 );
+			return self::failure( $ip, self::error( 'site_portrait_replay', 'Nonce already used.', 401 ) );
 		}
 
 		$limit = self::rate_limit();
@@ -304,6 +325,10 @@ final class Rest_Api {
 		if ( $served || 0 !== strpos( $request->get_route(), '/' . self::NAMESPACE_V1 . '/' ) ) {
 			return $served;
 		}
+		// Without a pairing the routes do not exist: let WordPress answer (404).
+		if ( null === self::$signer_override && ! Pairing::is_active() ) {
+			return $served;
+		}
 
 		$status = (int) $result->get_status();
 		$data   = $server->response_to_data( $result, false );
@@ -424,6 +449,30 @@ final class Rest_Api {
 		 */
 		$ip = (string) apply_filters( 'site_portrait_client_ip', $ip );
 		return false !== filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '';
+	}
+
+	/**
+	 * Returns an authentication error, or 429 once an IP has failed too often.
+	 *
+	 * Only failed requests are counted, so a valid signature is never blocked,
+	 * even when every client shares one IP behind a reverse proxy.
+	 *
+	 * @param string   $ip    Client IP.
+	 * @param WP_Error $error Error to return below the limit.
+	 * @return WP_Error
+	 */
+	private static function failure( $ip, WP_Error $error ) {
+		/**
+		 * Filters the number of failed requests allowed per IP and hour.
+		 *
+		 * @param int $limit Failed requests per hour.
+		 */
+		$limit = (int) apply_filters( 'site_portrait_failure_limit', self::FAILURE_LIMIT );
+		if ( Access_Log::count_failures_last_hour( $ip ) >= $limit ) {
+			self::$retry_after = HOUR_IN_SECONDS;
+			return self::error( 'site_portrait_rate_limited', 'Too many failed requests.', 429 );
+		}
+		return $error;
 	}
 
 	/**

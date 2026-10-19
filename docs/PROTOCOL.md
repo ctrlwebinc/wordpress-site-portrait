@@ -406,8 +406,10 @@ Site-Portrait-Protocol: 1
 ```
 
 Covering `"signature";req;key="sp"` binds the response to the exact signed
-request. Responses to requests that carried no valid `sp` signature are still
-signed but omit that component. Services SHOULD verify response signatures; doing
+request. Responses to requests that carried no valid `sp` signature (always
+errors: 401, 403, 429…) are still signed but omit that component. Services
+verifying responses MUST reject a 2xx response that is not bound to their
+request, so that an old response cannot be replayed to them. Services SHOULD verify response signatures; doing
 so gives non-repudiable evidence that a portrait came from the paired site.
 
 ### 5.3 Verification algorithm (site side)
@@ -748,8 +750,8 @@ carried as an extra JWK member of `N`:
 1. The service publishes `N` (with an endorsement by the current key) in the
    discovery `jwks`, alongside the current key, for at least 7 days.
 2. It then signs requests with `N`.
-3. A site receiving an unknown `keyid` re-fetches discovery (at most once per
-   hour), pins every key that carries a valid endorsement by an already pinned
+3. A site receiving an unknown `keyid` re-fetches discovery (at most once per hour by default, filter
+   `site_portrait_key_refresh_interval`), pins every key that carries a valid endorsement by an already pinned
    key, and retries verification once.
 4. Keys that disappear from the discovery `jwks` are unpinned on the next
    refresh — **unless** this would leave no pinned key.
@@ -773,8 +775,12 @@ Per pairing, sliding one-hour window; default **60 requests/hour** for all
 endpoints combined in `single` mode, and **60 + 2 × number of sites** in
 `network` mode so that every site can be listed and described once per hour
 (filter `site_portrait_rate_limit`). Exceeding it returns
-429 with `Retry-After` (seconds). Failed authentication attempts are rate
-limited per source IP as well (default 30/hour) to keep log noise bounded.
+429 with `Retry-After` (seconds). Failed authentication attempts are also
+limited per source IP (default 30/hour, filter `site_portrait_failure_limit`)
+to keep log noise bounded: once the limit is reached, further *failing*
+requests from that IP get 429. Correctly signed requests are never blocked by
+this limit, so an attacker sharing the service's IP (e.g. behind a reverse
+proxy) cannot lock the service out.
 
 ### 12.2 IP allow-list
 

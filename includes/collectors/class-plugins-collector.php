@@ -23,8 +23,9 @@ final class Plugins_Collector extends Collector {
 	 * @return array
 	 */
 	public function collect( Collect_Context $context ) {
-		$plugins        = get_plugins();
-		$updates        = get_site_transient( 'update_plugins' );
+		$plugins = get_plugins();
+		$updates = get_site_transient( 'update_plugins' );
+		// Read-only: reports whether auto-updates are enabled; never changes update behaviour.
 		$auto_updates   = (array) get_site_option( 'auto_update_plugins', array() );
 		$auto_enabled   = wp_is_auto_update_enabled_for_type( 'plugin' );
 		$network_active = is_multisite() ? array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ) : array();

@@ -39,7 +39,13 @@ test('response vector', () => {
   assert.equal(h.Signature, 'sp=:RB+R308P9gAS41M/lWK4oVEiAGNAuSReP3aOzmo55wNQIbGs9V7R2G10u9kagVAP8WMv2Q3vAa1UBGetZtQZDQ==:');
   const kid = sp.verifyResponse(200, { ...h, 'Content-Type': 'application/json; charset=UTF-8' }, '{"ok":true}', Buffer.from(REQ_SIG, 'base64'), () => sp.publicJwk(site));
   assert.equal(kid, site.kid);
-  assert.throws(() => sp.verifyResponse(200, { ...h, 'Content-Type': 'application/json; charset=UTF-8' }, '{"ok":false}', null, () => sp.publicJwk(site)), { code: 'site_portrait_digest_mismatch' });
+  const headers = { ...h, 'Content-Type': 'application/json; charset=UTF-8' };
+  const reqSig = Buffer.from(REQ_SIG, 'base64');
+  assert.throws(() => sp.verifyResponse(200, headers, '{"ok":false}', reqSig, () => sp.publicJwk(site)), { code: 'site_portrait_digest_mismatch' });
+  // A response to a signed request must be bound to it.
+  const unbound = { ...sp.signResponse(200, 'application/json; charset=UTF-8', '{"ok":true}', null, site), 'Content-Type': 'application/json; charset=UTF-8' };
+  assert.throws(() => sp.verifyResponse(200, unbound, '{"ok":true}', reqSig, () => sp.publicJwk(site)), { code: 'site_portrait_signature_malformed' });
+  assert.equal(sp.verifyResponse(200, unbound, '{"ok":true}', null, () => sp.publicJwk(site)), site.kid);
 });
 
 test('endorsement vector', () => {

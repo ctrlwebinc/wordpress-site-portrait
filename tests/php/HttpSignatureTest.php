@@ -190,6 +190,15 @@ final class HttpSignatureTest extends TestCase {
 				Http_Signature::verify_response( 403, $headers, $body, $req_sig, $this->lookup() );
 			}
 		);
+		$unbound = Http_Signature::sign_response( 200, 'application/json; charset=UTF-8', $digest, null, $this->keys['secret'], $this->kid );
+		$this->assert_error(
+			'site_portrait_signature_malformed',
+			function () use ( $headers, $unbound, $body, $req_sig ) {
+				$headers['signature-input'] = $unbound['Signature-Input'];
+				$headers['signature']       = $unbound['Signature'];
+				Http_Signature::verify_response( 200, $headers, $body, $req_sig, $this->lookup() );
+			}
+		);
 		$this->assert_error(
 			'site_portrait_digest_mismatch',
 			function () use ( $headers, $req_sig ) {

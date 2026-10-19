@@ -193,6 +193,18 @@ test('access log lists the requests', async () => {
   assert.match(page.text, /site_portrait_replay/);
 });
 
+test('failed requests are limited per IP without locking out the service', async () => {
+  let res;
+  for (let i = 0; i < 40; i++) {
+    res = await fetch(pairing.endpoints.status);
+    if (res.status === 429) break;
+  }
+  assert.equal(res.status, 429);
+  assert.equal((await res.json()).code, 'site_portrait_rate_limited');
+  const r = await call('status');
+  assert.equal(r.status, 200, 'a valid signature from the same IP still works');
+});
+
 test('service-initiated revocation removes the routes', async () => {
   const r = await call('revoke', { method: 'POST', body: { pairing_id: pairing.pairing_id, reason: 'account_closed' } });
   assert.equal(r.status, 200);
@@ -222,5 +234,6 @@ test('rate limit answers 429 with Retry-After', async () => {
   }
   assert.equal(r.status, 429);
   assert.equal(r.json.code, 'site_portrait_rate_limited');
+  assert.equal(r.json.message, 'Rate limit exceeded.', 'the per-pairing limit, not the failure limit');
   assert.ok(Number(r.headers['retry-after']) > 0);
 });

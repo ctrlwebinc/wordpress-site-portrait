@@ -1,0 +1,6 @@
+/vendor/
+/node_modules/
+/build/
+/.reference-client/
+/.phpunit.result.cache
+/.phpunit.cache/

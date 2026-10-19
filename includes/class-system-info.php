@@ -45,8 +45,13 @@ final class System_Info {
 		if ( null !== $cpuinfo ) {
 			$count = preg_match_all( '/^processor\s*:/m', $cpuinfo );
 			$count = $count > 0 ? $count : null;
-			if ( preg_match( '/^(?:model name|Model|cpu model)\s*:\s*(.+)$/mi', $cpuinfo, $m ) ) {
-				$model = preg_replace( '/\s+/', ' ', trim( $m[1] ) );
+			// x86 "model name", MIPS "cpu model", ARM boards "Model"; the x86
+			// "model" line is a numeric identifier and must be ignored.
+			foreach ( array( '/^model name\s*:\s*(.+)$/m', '/^cpu model\s*:\s*(.+)$/m', '/^Model\s*:\s*(.+)$/m' ) as $pattern ) {
+				if ( preg_match( $pattern, $cpuinfo, $m ) ) {
+					$model = preg_replace( '/\s+/', ' ', trim( $m[1] ) );
+					break;
+				}
 			}
 		}
 

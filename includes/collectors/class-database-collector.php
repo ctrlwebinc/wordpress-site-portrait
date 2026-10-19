@@ -76,7 +76,7 @@ final class Database_Collector extends Collector {
 		return array(
 			'engine'           => $engine,
 			'server_version'   => $this->server_version( $engine ),
-			'client'           => 'sqlite' !== $engine && extension_loaded( 'mysqlnd' ) ? 'mysqlnd ' . phpversion( 'mysqlnd' ) : null,
+			'client'           => 'sqlite' !== $engine && extension_loaded( 'mysqlnd' ) ? (string) phpversion( 'mysqlnd' ) : null,
 			'charset'          => $wpdb->charset ? (string) $wpdb->charset : null,
 			'collate'          => $wpdb->collate ? (string) $wpdb->collate : null,
 			'size'             => $size,

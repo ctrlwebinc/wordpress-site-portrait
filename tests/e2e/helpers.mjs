@@ -12,14 +12,14 @@ import { createService } from '../../bin/lib/service.mjs';
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 /** Starts Playground; resolves with { url, stop }. Reuses SP_WP_URL when set. */
-export async function startWordPress({ port = 9411, php = '8.3', blueprint = 'blueprint.json', extraArgs = [] } = {}) {
+export async function startWordPress({ port = 9411, php = process.env.SP_PHP ?? '8.3', blueprint = 'blueprint.json', siteUrl, extraArgs = [] } = {}) {
   if (process.env.SP_WP_URL) return { url: process.env.SP_WP_URL, stop: async () => {} };
-  const url = `http://127.0.0.1:${port}`;
+  const url = siteUrl ?? `http://127.0.0.1:${port}`;
   const child = spawn(
     'npx',
     [
       'wp-playground-cli', 'server',
-      `--port=${port}`, `--php=${php}`,
+      `--port=${port}`, `--php=${php}`, `--site-url=${url}`,
       `--mount=${ROOT}:/wordpress/wp-content/plugins/site-portrait`,
       `--blueprint=${path.join(ROOT, 'tests/e2e', blueprint)}`,
       '--define', 'WP_ENVIRONMENT_TYPE', 'local',
@@ -46,6 +46,25 @@ export async function startWordPress({ port = 9411, php = '8.3', blueprint = 'bl
         // Already stopped.
       }
     },
+  };
+}
+
+/**
+ * WordPress multisite refuses custom ports, so the network is announced as
+ * http://127.0.0.1 while Playground listens on another port. This redirects
+ * fetch() calls for that origin to the real port. Signatures stay valid: the
+ * site checks @authority against home_url(), not against the Host header.
+ */
+export function rewriteOrigin(from, to) {
+  const original = globalThis.fetch;
+  globalThis.fetch = (input, init) => {
+    const url = typeof input === 'string' ? input : input.url;
+    const u = new URL(url);
+    if (u.origin === from) return original(to + u.pathname + u.search, init);
+    return original(input, init);
+  };
+  return () => {
+    globalThis.fetch = original;
   };
 }
 

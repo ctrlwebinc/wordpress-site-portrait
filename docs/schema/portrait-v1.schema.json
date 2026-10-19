@@ -4,13 +4,15 @@
   "title": "Site Portrait document (schema 1.x)",
   "description": "Body of GET /site-portrait/v1/portrait. See docs/PROTOCOL.md section 8. Values that cannot be determined are null, never omitted. Sizes are bytes, durations seconds unless the name says otherwise. Minor schema versions only add optional members; receivers must ignore unknown members.",
   "type": "object",
-  "required": ["schema_version", "protocol_version", "generated_at", "generation_time_ms", "pairing_id", "site", "plugin", "scopes_returned", "scopes_denied", "data", "warnings"],
+  "required": ["schema_version", "protocol_version", "generated_at", "generation_time_ms", "pairing_id", "mode", "site_id", "site", "plugin", "scopes_returned", "scopes_denied", "data", "warnings"],
   "properties": {
     "schema_version": { "type": "string", "pattern": "^1\\.[0-9]+\\.[0-9]+$" },
     "protocol_version": { "const": "1" },
     "generated_at": { "type": "string", "format": "date-time" },
     "generation_time_ms": { "type": "integer", "minimum": 0 },
     "pairing_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]{1,64}$" },
+    "mode": { "enum": ["single", "network"] },
+    "site_id": { "type": ["integer", "null"], "minimum": 1, "description": "Blog ID when a single site of a network was requested, otherwise null." },
     "site": {
       "type": "object",
       "required": ["home_url", "site_url", "name"],
@@ -47,7 +49,7 @@
         "properties": {
           "scope": { "$ref": "#/$defs/scope" },
           "field": { "type": ["string", "null"], "description": "Dot path inside data.<scope>, or null for the whole scope." },
-          "code": { "enum": ["unavailable", "timeout", "permission_denied", "collector_error"] },
+          "code": { "enum": ["unavailable", "timeout", "partial", "permission_denied", "collector_error"] },
           "message": { "type": "string" }
         }
       }

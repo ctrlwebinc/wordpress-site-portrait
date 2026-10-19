@@ -87,6 +87,25 @@ Properties:
 | JSON | UTF-8, `Content-Type: application/json`. Unknown members MUST be ignored by receivers. |
 | Protocol version | The string `"1"`. Carried in discovery, in the REST namespace (`site-portrait/v1`), in the `tag` signature parameter (`site-portrait/1`) and in the `Site-Portrait-Protocol` response header. |
 
+### 2.1 Deployment modes
+
+A WordPress installation pairs with **at most one service** at a time, in one
+of two modes:
+
+| Mode | When | Who pairs | Settings live in | Portrait covers |
+|---|---|---|---|---|
+| `single` | Regular (non-multisite) installation. | A user with `manage_options`. | Site options. | The site. |
+| `network` | Multisite installation, plugin **network-activated**. | A super admin (`manage_network_options`), from the Network Admin. | Network options (`sitemeta`). | The whole network; per-site details on demand (§6.3, §6.5). |
+
+On a multisite installation where the plugin is activated on individual sites
+only, the plugin offers no pairing and registers no routes: a subsite
+administrator must not be able to disclose server- and database-level data that
+belongs to the whole network. The settings page explains how to network-activate
+the plugin instead.
+
+In `network` mode the REST routes are served by the **main site** of the
+network only; `@authority` (§5.1) is compared with the main site's host.
+
 ## 3. Discovery
 
 The administrator enters the **service base URL** (for example
@@ -267,6 +286,7 @@ Signature: sp=:…:
     "portrait": "https://example.com/wp-json/site-portrait/v1/portrait",
     "revoke":   "https://example.com/wp-json/site-portrait/v1/revoke"
   },
+  "mode": "single",
   "scopes": ["core", "plugins", "themes", "server"],
   "plugin_version": "1.0.0",
   "protocol_version": "1"
@@ -278,7 +298,11 @@ possession: the service verifies the signature with `site_jwk` from the body.
 
 `endpoints` are absolute URLs built with `rest_url()`; they may use the
 `?rest_route=` form on sites without pretty permalinks. Services MUST use them
-as given and never build REST URLs themselves.
+as given and never build REST URLs themselves. In `network` mode (§2.1),
+`mode` is `"network"`, `client_id` is the main site's origin, the
+`redirect_uri` points to the Network Admin
+(`/wp-admin/network/edit.php?action=site_portrait_callback&_wpnonce=…`), and
+`endpoints` additionally contains `"sites"` (§6.5).
 
 The service MUST verify, and reject with HTTP 400 `{"error":"invalid_grant"}`
 otherwise:
@@ -434,7 +458,9 @@ Cheap health/identity check; used for confirmation (§4.5) and key discovery.
   "protocol_version": "1",
   "plugin_version": "1.0.0",
   "pairing_id": "c0a7d0e2-4f0f-4d8b-9a59-1d3c0f6a7b11",
+  "mode": "single",
   "site_url": "https://example.com",
+  "sites_count": 1,
   "scopes_granted": ["core", "plugins", "themes", "server"],
   "scopes_available": ["core", "plugins", "themes", "server", "database", "content", "users_counts"],
   "site_jwks": {
@@ -458,6 +484,19 @@ Query parameter:
 | Name | Description |
 |---|---|
 | `scopes` | Optional comma-separated list. Defaults to all granted scopes. |
+| `site_id` | `network` mode only. Optional blog ID from `/sites`. |
+
+In `network` mode without `site_id`, the portrait describes the network as a
+whole: `server` and `database` (always network-wide), `plugins` (network-active
+plugins plus every plugin installed; `active` means active on at least one
+site), `themes` (installed themes; `active` means active on at least one site),
+`core` (whose `multisite` block then gives the network summary), `content` and `users_counts` summed over
+all sites **within the time budget** (see `warnings` with code `partial`).
+With `site_id`, `content`, `users_counts`, `themes` (active theme) and the
+per-site part of `plugins` describe that site only; `server` and `database`
+remain network-wide. An unknown, archived, spam or deleted site →
+`404 site_portrait_unknown_site`. `site_id` in `single` mode →
+`400 site_portrait_invalid_param`.
 
 * An unknown scope name → `400 site_portrait_invalid_scope`.
 * A known but not-granted scope is **omitted**, listed in `scopes_denied`, and
@@ -491,6 +530,37 @@ keys, site key pair, nonces) and answers `200 {"revoked": true}` signed with the
 site key that was just discarded. This is the only request that changes state,
 and it only removes the plugin's own pairing data.
 
+### 6.5 `GET /site-portrait/v1/sites` (`network` mode only)
+
+Lists the sites of the network, 100 per page, ordered by blog ID. Requires the
+`core` scope. Not registered in `single` mode.
+
+| Query parameter | Description |
+|---|---|
+| `page` | 1-based page number (default 1). |
+
+```json
+{
+  "page": 1,
+  "per_page": 100,
+  "total": 3,
+  "total_pages": 1,
+  "sites": [
+    { "site_id": 1, "url": "https://example.com/", "main": true,  "public": true, "archived": false, "spam": false, "deleted": false, "registered": "2019-04-02T10:11:12Z", "last_updated": "2026-10-18T22:01:00Z", "active_theme": "twentytwentyfive", "active_plugins_count": 12, "posts_count": 340, "attachments_count": 2210 },
+    { "site_id": 2, "url": "https://example.com/shop/", "main": false, "public": true, "archived": false, "spam": false, "deleted": false, "registered": "2021-01-15T08:00:00Z", "last_updated": "2026-10-17T09:30:00Z", "active_theme": "storefront", "active_plugins_count": 25, "posts_count": 58, "attachments_count": 9120 }
+  ]
+}
+```
+
+`posts_count` counts published items of public post types. `posts_count` and
+`attachments_count` require the `content` scope, `active_plugins_count` the
+`plugins` scope and `active_theme` the `themes` scope; they are `null` when that
+scope is not granted. The normative schema is
+[`schema/sites-v1.schema.json`](schema/sites-v1.schema.json).
+
+Site URLs of every site in the network are disclosed by this endpoint; the
+consent screen states it explicitly in `network` mode.
+
 ## 7. Scopes
 
 | Scope | Contents (summary) | Notes |
@@ -521,6 +591,8 @@ The normative definition is the JSON Schema
   "generated_at": "2026-10-19T14:00:00Z",
   "generation_time_ms": 412,
   "pairing_id": "c0a7d0e2-4f0f-4d8b-9a59-1d3c0f6a7b11",
+  "mode": "single",
+  "site_id": null,
   "site": { "home_url": "https://example.com", "site_url": "https://example.com", "name": "My Bakery" },
   "plugin": { "version": "1.0.0" },
   "scopes_returned": ["core", "plugins"],
@@ -542,6 +614,9 @@ The normative definition is the JSON Schema
   MAY have a matching entry in `warnings`.
 * A collector that fails entirely yields `data.<scope> = null` plus a warning;
   the rest of the portrait is still returned.
+* `mode` is `single` or `network`; `site_id` is the requested blog ID, or
+  `null` for a single site or a network-wide portrait. In a network-wide
+  portrait, `site` describes the main site.
 
 ### 8.2 Data sources
 
@@ -588,6 +663,8 @@ Error responses use WordPress' REST format and are signed like any response:
 | 400 | `site_portrait_invalid_scope` | Unknown scope in `scopes`. |
 | 400 | `site_portrait_digest_mismatch` | `Content-Digest` does not match the body. |
 | 400 | `site_portrait_invalid_body` | Malformed JSON body (POST). |
+| 400 | `site_portrait_invalid_param` | Invalid query parameter (e.g. `site_id` in `single` mode, bad `page`). |
+| 404 | `site_portrait_unknown_site` | `site_id` does not designate an active site of the network. |
 | 401 | `site_portrait_signature_missing` | No `sp` signature. |
 | 401 | `site_portrait_signature_malformed` | Unparseable fields, wrong `alg`/`tag`, wrong covered components. |
 | 401 | `site_portrait_signature_expired` | Outside the `created`/`expires` window (check your clock). |
@@ -684,7 +761,9 @@ site key it already knows, and records `N`.
 ### 12.1 Rate limiting
 
 Per pairing, sliding one-hour window; default **60 requests/hour** for all
-endpoints combined (filter `site_portrait_rate_limit`). Exceeding it returns
+endpoints combined in `single` mode, and **60 + 2 × number of sites** in
+`network` mode so that every site can be listed and described once per hour
+(filter `site_portrait_rate_limit`). Exceeding it returns
 429 with `Retry-After` (seconds). Failed authentication attempts are rate
 limited per source IP as well (default 30/hour) to keep log noise bounded.
 
@@ -743,6 +822,7 @@ end-to-end tests.
 | CSRF / login CSRF on pairing | WP nonce + `manage_options` + per-user pending state + `state` parameter. |
 | Authorization-code interception | PKCE S256; code bound to `site_key_thumbprint`; token request signed with the site key. |
 | Someone pairs a site they do not own | The confirmation step (§4.5) requires the real site at `client_id` to return the `pairing_id` signed with the registered site key. |
+| Subsite administrator in a multisite network discloses network-wide data | Pairing is only possible in `network` mode by a super admin (§2.1). |
 | Malicious or compromised service | Read-only API, admin-chosen scopes, data minimisation (§8.3), access log, IP allow-list, one-click revocation. No code or configuration is ever accepted from the service. |
 | SSRF via service URL | Only administrators can enter it; `wp_safe_remote_*` blocks private ranges; no redirects; HTTPS only; response size capped. |
 | Malicious discovery content | All strings are escaped on display; URLs must be HTTPS and same-origin; size limit. |

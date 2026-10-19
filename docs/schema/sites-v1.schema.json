@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:site-portrait:sites:1",
+  "title": "Site Portrait network site list (protocol version 1)",
+  "description": "Body of GET /site-portrait/v1/sites in network mode. See docs/PROTOCOL.md section 6.5.",
+  "type": "object",
+  "required": ["page", "per_page", "total", "total_pages", "sites"],
+  "properties": {
+    "page": { "type": "integer", "minimum": 1 },
+    "per_page": { "type": "integer", "minimum": 1, "maximum": 100 },
+    "total": { "type": "integer", "minimum": 0 },
+    "total_pages": { "type": "integer", "minimum": 0 },
+    "sites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["site_id", "url", "main", "public", "archived", "spam", "deleted", "registered", "last_updated", "active_theme", "active_plugins_count", "posts_count", "attachments_count"],
+        "properties": {
+          "site_id": { "type": "integer", "minimum": 1 },
+          "url": { "type": "string", "format": "uri" },
+          "main": { "type": "boolean" },
+          "public": { "type": "boolean" },
+          "archived": { "type": "boolean" },
+          "spam": { "type": "boolean" },
+          "deleted": { "type": "boolean" },
+          "registered": { "type": ["string", "null"], "format": "date-time" },
+          "last_updated": { "type": ["string", "null"], "format": "date-time" },
+          "active_theme": { "type": ["string", "null"], "description": "Requires the themes scope." },
+          "active_plugins_count": { "type": ["integer", "null"], "minimum": 0, "description": "Site-level active plugins, excluding network-active ones. Requires the plugins scope." },
+          "posts_count": { "type": ["integer", "null"], "minimum": 0, "description": "Published items of public post types. Requires the content scope." },
+          "attachments_count": { "type": ["integer", "null"], "minimum": 0, "description": "Requires the content scope." }
+        }
+      }
+    }
+  }
+}

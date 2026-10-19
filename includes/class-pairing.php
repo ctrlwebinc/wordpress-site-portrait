@@ -387,7 +387,13 @@ final class Pairing {
 	 */
 	public static function refresh_service_keys() {
 		$pairing = self::get();
-		if ( null === $pairing || ( (int) $pairing['keys_refreshed_at'] + self::KEY_REFRESH_SPACING ) > time() ) {
+		/**
+		 * Filters the minimum number of seconds between two discovery refreshes.
+		 *
+		 * @param int $interval Seconds.
+		 */
+		$interval = (int) apply_filters( 'site_portrait_key_refresh_interval', self::KEY_REFRESH_SPACING );
+		if ( null === $pairing || ( (int) $pairing['keys_refreshed_at'] + $interval ) > time() ) {
 			return false;
 		}
 		$pairing['keys_refreshed_at'] = time();

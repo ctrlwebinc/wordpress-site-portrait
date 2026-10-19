@@ -187,6 +187,11 @@ final class Content_Collector extends Collector {
 		$sizes    = array();
 		$complete = true;
 		foreach ( $paths as $name => $path ) {
+			if ( ! file_exists( $path ) ) {
+				// No uploads yet, for instance.
+				$sizes[ $name ] = 0;
+				continue;
+			}
 			$remaining = $deadline - microtime( true );
 			if ( $remaining <= 0 ) {
 				$sizes[ $name ] = null;

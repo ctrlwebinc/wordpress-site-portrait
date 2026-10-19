@@ -1,0 +1,11 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "steps": [
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/mu-plugins/site-portrait-e2e.php",
+      "data": "<?php\n// End-to-end tests only: allow immediate service key refresh.\nadd_filter( 'site_portrait_key_refresh_interval', '__return_zero' );\n"
+    },
+    { "step": "activatePlugin", "pluginPath": "site-portrait/site-portrait.php" }
+  ]
+}

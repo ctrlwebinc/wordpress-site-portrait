@@ -10,3 +10,4 @@
 /phpunit.xml.dist    export-ignore
 /bin                 export-ignore
 /tests               export-ignore
+/README.md           export-ignore

@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       Site Portrait
- * Description:       Lets a service you choose securely read a technical portrait of your site (versions, server, database, content volumes) to recommend suitable hosting.
+ * Description:       Lets a service you choose securely read a technical portrait of your site to recommend suitable hosting.
  * Version:           0.1.0
  * Requires at least: 6.4
  * Requires PHP:      7.4

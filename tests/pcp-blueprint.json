@@ -1,0 +1,11 @@
+{
+  "steps": [
+    { "step": "installPlugin", "pluginData": { "resource": "wordpress.org/plugins", "slug": "plugin-check" } },
+    { "step": "wp-cli", "command": "wp plugin activate --all" },
+    {
+      "step": "cp",
+      "fromPath": "/wordpress/wp-content/plugins/plugin-check/drop-ins/object-cache.copy.php",
+      "toPath": "/wordpress/wp-content/object-cache.php"
+    }
+  ]
+}

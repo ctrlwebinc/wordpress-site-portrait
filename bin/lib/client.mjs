@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Signed calls from the service to a paired site (PROTOCOL.md §5–6), with
 // response verification and site key rotation handling (§11.2).
 import {

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
 // Site Portrait reference client: plays the service role for end-to-end tests
 // and shows what a compatible service must implement (docs/PROTOCOL.md §13).
 //

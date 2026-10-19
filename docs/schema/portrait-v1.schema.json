@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:site-portrait:portrait:1",
+  "$comment": "SPDX-License-Identifier: CC-BY-4.0. Part of the Site Portrait protocol specification (docs/PROTOCOL.md).",
   "title": "Site Portrait document (schema 1.x)",
   "description": "Body of GET /site-portrait/v1/portrait. See docs/PROTOCOL.md section 8. Values that cannot be determined are null, never omitted. Sizes are bytes, durations seconds unless the name says otherwise. Minor schema versions only add optional members; receivers must ignore unknown members.",
   "type": "object",

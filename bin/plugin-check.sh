@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Runs Plugin Check (PCP) on the distributable build with the flags used by
 # the WordPress.org review, inside WordPress Playground (no local server).
 set -euo pipefail

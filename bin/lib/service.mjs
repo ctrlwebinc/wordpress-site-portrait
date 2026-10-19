@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Minimal reference implementation of the service side of the protocol
 // (PROTOCOL.md §3, §4, §10.1, §13). For testing and as a starting point:
 // it keeps state in a JSON file and has no user accounts.

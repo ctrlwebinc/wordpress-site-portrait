@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Persistent state of the reference service (JSON file). Reloaded on every
 // use so that the "serve" process and CLI commands can share it.
 import fs from 'node:fs';

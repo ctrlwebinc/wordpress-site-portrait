@@ -65,6 +65,13 @@ node bin/reference-client.mjs revoke
 
 State (keys, pairings) is kept in `.reference-client/` (git-ignored).
 
-## License
+## Licenses
 
-GPLv2 or later.
+| Part | License | File |
+|---|---|---|
+| WordPress plugin (`site-portrait.php`, `uninstall.php`, `includes/`) and tests | GPL-2.0-or-later | [`LICENSE`](LICENSE) |
+| Protocol specification and JSON schemas (`docs/`) | CC-BY-4.0 | [`docs/LICENSE`](docs/LICENSE) |
+| Reference client and scripts (`bin/`) | Apache-2.0 | [`bin/LICENSE`](bin/LICENSE) |
+
+The specification is under CC-BY-4.0 and the reference client under Apache-2.0
+so that anyone can implement a compatible service, including proprietary ones.

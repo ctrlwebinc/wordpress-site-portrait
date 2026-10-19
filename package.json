@@ -2,7 +2,7 @@
   "name": "site-portrait-dev",
   "private": true,
   "description": "Development tooling for the Site Portrait plugin: reference client (service role), end-to-end tests and Plugin Check.",
-  "license": "GPL-2.0-or-later",
+  "license": "GPL-2.0-or-later AND Apache-2.0 AND CC-BY-4.0",
   "type": "module",
   "engines": {
     "node": ">=20"

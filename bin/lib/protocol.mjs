@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
 // Site Portrait protocol primitives for Node.js (>= 20), without dependencies.
 // Reference implementation of docs/PROTOCOL.md §2 and §5, used by the
-// reference client and the tests. Licensed GPL-2.0-or-later.
+// reference client and the tests.
 
 import crypto from 'node:crypto';
 

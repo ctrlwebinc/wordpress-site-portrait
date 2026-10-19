@@ -7,7 +7,7 @@
  * Requires PHP:      7.4
  * Author:            ctrlweb
  * Author URI:        https://ctrlweb.ca
- * License:           GPLv2 or later
+ * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       site-portrait
  * Network:           true

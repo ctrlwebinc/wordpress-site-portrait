@@ -5,7 +5,7 @@ Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 0.1.0
-License: GPLv2 or later
+License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Let a service you choose securely read a technical portrait of your site (versions, server, database, content volumes) to recommend hosting.
@@ -32,6 +32,10 @@ Choosing the right hosting means knowing your site: WordPress and PHP versions, 
 = For developers =
 
 The full protocol (discovery, pairing, request signatures, endpoints, errors, JSON schemas and test vectors) is in `docs/PROTOCOL.md` and `docs/schema/`. The filter `site_portrait_scope_data` lets other plugins add data to a category.
+
+= Licenses =
+
+The plugin code is licensed under the GPL, version 2 or later (GPL-2.0-or-later). The protocol specification and JSON schemas in `docs/` are licensed under Creative Commons Attribution 4.0 (CC-BY-4.0), so that anyone can implement a compatible service.
 
 == External services ==
 

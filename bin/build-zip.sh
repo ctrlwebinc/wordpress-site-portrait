@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Builds the distributable plugin (committed files minus export-ignore entries)
 # into build/site-portrait and build/site-portrait.zip.
 set -euo pipefail

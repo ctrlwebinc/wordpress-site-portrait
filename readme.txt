@@ -4,7 +4,7 @@ Tags: hosting, site health, system info, migration, server
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 1.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -74,5 +74,5 @@ Read `docs/PROTOCOL.md`. It lists what a service must implement, with examples a
 
 == Changelog ==
 
-= 0.1.0 =
+= 1.0.0 =
 * First version: discovery, pairing with PKCE and Ed25519 keys, signed REST API, seven data categories, access log, IP allow-list, rate limiting, key rotation, multisite network mode.

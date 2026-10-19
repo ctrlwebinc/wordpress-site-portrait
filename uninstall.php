@@ -8,7 +8,7 @@
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
 if ( ! defined( 'SITE_PORTRAIT_VERSION' ) ) {
-	define( 'SITE_PORTRAIT_VERSION', '0.1.0' );
+	define( 'SITE_PORTRAIT_VERSION', '1.0.0' );
 }
 if ( ! defined( 'SITE_PORTRAIT_FILE' ) ) {
 	define( 'SITE_PORTRAIT_FILE', __DIR__ . '/site-portrait.php' );

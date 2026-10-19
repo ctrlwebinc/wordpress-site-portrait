@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Site Portrait
  * Description:       Lets a service you choose securely read a technical portrait of your site to recommend suitable hosting.
- * Version:           0.1.0
+ * Version:           1.0.0
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Author:            ctrlweb
@@ -17,7 +17,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SITE_PORTRAIT_VERSION', '0.1.0' );
+define( 'SITE_PORTRAIT_VERSION', '1.0.0' );
 define( 'SITE_PORTRAIT_FILE', __FILE__ );
 define( 'SITE_PORTRAIT_DIR', plugin_dir_path( __FILE__ ) );
 

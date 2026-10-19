@@ -187,8 +187,9 @@
         "slug": { "type": "string" },
         "name": { "type": "string" },
         "version": { "type": "string" },
-        "active": { "type": "boolean" },
+        "active": { "type": "boolean", "description": "Network-wide portrait: active on at least one site or network-active." },
         "network_active": { "type": "boolean" },
+        "active_sites": { "$ref": "#/$defs/nint", "description": "Network-wide portrait only: number of sites where the plugin is active (excluding network activation)." },
         "auto_update": { "type": "boolean" },
         "update": { "$ref": "#/$defs/update" },
         "requires_wp": { "$ref": "#/$defs/nstr" },
@@ -454,11 +455,12 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "builtin", "public", "counts"],
+            "required": ["name", "registered", "builtin", "public", "counts"],
             "properties": {
               "name": { "type": "string" },
+              "registered": { "type": "boolean", "description": "False when posts of this type exist but no code registers the type (e.g. plugin deactivated)." },
               "builtin": { "type": "boolean" },
-              "public": { "type": "boolean" },
+              "public": { "$ref": "#/$defs/nbool" },
               "counts": {
                 "type": "object",
                 "description": "Post count per status (publish, draft, pending, private, future, trash, and custom statuses) plus total.",
@@ -485,11 +487,12 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "builtin", "public", "terms_count"],
+            "required": ["name", "registered", "builtin", "public", "terms_count"],
             "properties": {
               "name": { "type": "string" },
+              "registered": { "type": "boolean" },
               "builtin": { "type": "boolean" },
-              "public": { "type": "boolean" },
+              "public": { "$ref": "#/$defs/nbool" },
               "terms_count": { "$ref": "#/$defs/nint" }
             }
           }
@@ -527,10 +530,10 @@
         "total": { "type": "integer", "minimum": 0 },
         "by_role": {
           "type": "object",
-          "description": "Role slug → number of users. Users without a role are counted under 'none'.",
+          "description": "Role slug → number of users. Users without a role are counted under 'none'. In a network-wide portrait, role assignments are summed over sites (a user with roles on two sites counts twice).",
           "additionalProperties": { "type": "integer", "minimum": 0 }
         },
-        "network_total": { "$ref": "#/$defs/nint", "description": "Multisite only: users in the whole network." },
+        "network_total": { "$ref": "#/$defs/nint", "description": "Multisite only: users in the whole network (each user once)." },
         "extensions": { "$ref": "#/$defs/extensions" }
       }
     }

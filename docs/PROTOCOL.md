@@ -620,10 +620,17 @@ The normative definition is the JSON Schema
 
 ### 8.2 Data sources
 
-Where possible the plugin reuses the core *Site Health* data
-(`WP_Debug_Data::debug_data()`), then normalises it into typed values (Site
-Health returns localised, human-formatted strings, which are unsuitable for
-machines). CPU and memory are read from `/proc/cpuinfo`, `/proc/meminfo` and
+The plugin reuses the same core APIs as *Site Health* (`get_plugins()`,
+`get_dropins()`, `get_core_updates()`, `WP_Debug_Data::get_mysql_var()`,
+`recurse_dirsize()`…) and returns typed values. It deliberately does **not**
+call `WP_Debug_Data::debug_data()` as a whole: that method performs an outbound
+request to wordpress.org and returns localised, human-formatted strings.
+Update information comes from the transients WordPress already maintains; the
+plugin never triggers an update check itself.
+
+Post, attachment and taxonomy counts are computed with `GROUP BY` queries on the
+site's tables rather than through registered post types, so content left behind
+by deactivated plugins is counted too (`registered: false`). CPU and memory are read from `/proc/cpuinfo`, `/proc/meminfo` and
 the cgroup files (`/sys/fs/cgroup/cpu.max`, `memory.max`) when readable, so
 that container limits are reported in addition to host values; otherwise the
 values are `null`. The plugin never executes shell commands.
@@ -638,9 +645,11 @@ paths, the database table prefix, or environment variables.
 
 ### 8.4 Expensive values
 
-Directory sizes are computed with a time budget (default 10 s in total) and
-cached for one hour. When the budget is exceeded the size is `null`, with a
-`timeout` warning; later calls continue from the cache.
+Directory sizes are computed with a time budget (default 10 s in total, filter
+`site_portrait_size_budget`) and cached for one hour (`computed_at` tells when).
+When the budget is exceeded the remaining sizes are `null`, with a `timeout`
+warning. In a network-wide portrait, per-site loops share a similar budget and
+report `partial` warnings when they stop early.
 
 ### 8.5 Extensibility
 
@@ -779,8 +788,8 @@ documentation) so administrators can use this feature.
 
 Every request to the REST routes is logged: date (UTC), source IP, endpoint,
 `keyid`, requested/returned scopes, HTTP status and error code. The log is
-visible to administrators in the plugin settings, capped at 500 entries and
-90 days, and deleted on uninstall.
+visible to administrators in the plugin settings, kept for 90 days (at most
+10 000 entries, which also back the rate limiter) and deleted on uninstall.
 
 ## 13. Service implementation checklist
 
@@ -857,8 +866,8 @@ source IP addresses kept in the site's own access log.
 For local testing only, the plugin accepts `http` service URLs and private IP
 addresses when **all** of the following hold: the constant
 `SITE_PORTRAIT_DEV_MODE` is `true`, `wp_get_environment_type()` is `local` or
-`development`, and both the site and the service hosts end in `.test`,
-`.localhost` or are `localhost`. The settings page shows a permanent warning
+`development`, and both the site and the service hosts end in `.test` or
+`.localhost`, or are `localhost`, `127.0.0.1` or `[::1]`. The settings page shows a permanent warning
 while it is active.
 
 ## 15. Test vectors

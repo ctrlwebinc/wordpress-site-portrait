@@ -1,4 +1,4 @@
-=== Site Portrait ===
+=== ctrlweb Site Portrait ===
 Contributors: ctrlwebinc
 Tags: hosting, site health, system info, migration, server
 Requires at least: 6.4
@@ -8,14 +8,14 @@ Stable tag: 1.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Let a service you choose securely read a technical portrait of your site (versions, server, database, content volumes) to recommend hosting.
+Let any compatible service you choose securely read a technical portrait of your site (versions, server, database, content) to recommend hosting.
 
 == Description ==
 
-Choosing the right hosting means knowing your site: WordPress and PHP versions, plugins and themes, database size, number of posts and media files, server memory and CPU, caches in place… Site Portrait lets **a service that you choose** (typically a hosting provider or an agency) read that information securely, without giving it an administrator account.
+Choosing the right hosting means knowing your site: WordPress and PHP versions, plugins and themes, database size, number of posts and media files, server memory and CPU, caches in place… ctrlweb Site Portrait lets **a service that you choose** (typically a hosting provider or an agency) read that information securely, without giving it an administrator account.
 
 * **Off by default.** Nothing happens and nothing is sent until you enter the address of a service and approve the connection.
-* **Any compatible service.** The plugin is not tied to any company. The open protocol is documented in `docs/PROTOCOL.md` (included in the plugin), so anyone can build a compatible service.
+* **Any compatible service.** The plugin is not tied to any company, including its author. It implements Site Portrait, an open protocol documented in `docs/PROTOCOL.md` (included in the plugin), so anyone can build a compatible service.
 * **You choose what is shared.** Seven categories (WordPress core, plugins, themes, server, database, content volumes, user counts) can be ticked or unticked at any time.
 * **Read-only and minimised.** The service can never change your site. The plugin never shares passwords, keys, `wp-config.php` values, user names or email addresses, post content, file paths, the database prefix or server IP addresses.
 * **No password to leak.** Instead of a password, the site and the service exchange public keys. Every request is signed (HTTP Message Signatures, RFC 9421, with Ed25519) and can only be used once. Even a copy of your database does not let anyone impersonate the service.
@@ -62,7 +62,7 @@ The site only stores the service's public key, which cannot be used to send requ
 
 = Why not use an application password? =
 
-An application password gives a service every permission of the user who created it, and it can be reused by anyone who obtains it. Site Portrait gives read access to the chosen categories only, with signed, single-use requests.
+An application password gives a service every permission of the user who created it, and it can be reused by anyone who obtains it. This plugin gives read access to the chosen categories only, with signed, single-use requests.
 
 = My site is on localhost or uses HTTP. =
 

@@ -9,7 +9,7 @@ import { startWordPress, startService, Browser, formFields, notices, waitFor, re
 import { signedFetch } from '../../bin/lib/client.mjs';
 
 const ALL_SCOPES = ['core', 'plugins', 'themes', 'server', 'database', 'content', 'users_counts'];
-const SETTINGS = '/wp-admin/network/settings.php?page=site-portrait';
+const SETTINGS = '/wp-admin/network/settings.php?page=ctrlweb-site-portrait';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
@@ -39,7 +39,7 @@ after(async () => {
 });
 
 test('subsite administrators see no settings page', async () => {
-  const page = await admin.request('/shop/wp-admin/options-general.php?page=site-portrait');
+  const page = await admin.request('/shop/wp-admin/options-general.php?page=ctrlweb-site-portrait');
   assert.doesNotMatch(page.text, /Look up service/);
 });
 
@@ -91,7 +91,7 @@ test('network-wide portrait aggregates sites', async () => {
   const hello = r.json.data.plugins.items.find((p) => p.slug === 'hello');
   assert.equal(hello.active, true);
   assert.equal(hello.active_sites, 1);
-  const self = r.json.data.plugins.items.find((p) => p.slug === 'site-portrait');
+  const self = r.json.data.plugins.items.find((p) => p.slug === 'ctrlweb-site-portrait');
   assert.equal(self.network_active, true);
   assert.equal(r.json.data.users_counts.network_total, 1);
 });

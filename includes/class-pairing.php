@@ -71,7 +71,7 @@ final class Pairing {
 	public static function begin( array $discovery, array $scopes, $user_id ) {
 		$scopes = array_values( array_intersect( Scopes::sanitize( $scopes ), $discovery['scopes_supported'] ) );
 		if ( empty( $scopes ) ) {
-			return new WP_Error( 'site_portrait_no_scope', __( 'Select at least one category of data to share.', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_no_scope', __( 'Select at least one category of data to share.', 'ctrlweb-site-portrait' ) );
 		}
 
 		$keys     = Crypto::generate_keypair();
@@ -146,13 +146,13 @@ final class Pairing {
 		self::cancel_pending( $user_id );
 
 		if ( ! is_array( $pending ) || ! is_string( $state ) || ! hash_equals( $pending['state'], $state ) ) {
-			return new WP_Error( 'site_portrait_state_mismatch', __( 'The connection request expired or was not started from this site. Please start again.', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_state_mismatch', __( 'The connection request expired or was not started from this site. Please start again.', 'ctrlweb-site-portrait' ) );
 		}
 		if ( ! is_string( $code ) || '' === $code || strlen( $code ) > 512 ) {
-			return new WP_Error( 'site_portrait_invalid_code', __( 'The service returned an invalid authorization code.', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_invalid_code', __( 'The service returned an invalid authorization code.', 'ctrlweb-site-portrait' ) );
 		}
 		if ( self::is_active() ) {
-			return new WP_Error( 'site_portrait_already_paired', __( 'This site is already connected to a service. Disconnect it first.', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_already_paired', __( 'This site is already connected to a service. Disconnect it first.', 'ctrlweb-site-portrait' ) );
 		}
 
 		$discovery = $pending['discovery'];
@@ -186,17 +186,17 @@ final class Pairing {
 			return $response;
 		}
 		if ( 200 !== $response['status'] ) {
-			return Service_Client::error_from_response( $response, __( 'The code exchange with the service', 'site-portrait' ) );
+			return Service_Client::error_from_response( $response, __( 'The code exchange with the service', 'ctrlweb-site-portrait' ) );
 		}
 
 		$data = json_decode( $response['body'], true );
 		if ( ! is_array( $data ) || ! isset( $data['pairing_id'] ) || ! is_string( $data['pairing_id'] ) || ! preg_match( self::PAIRING_ID_RE, $data['pairing_id'] ) ) {
-			return new WP_Error( 'site_portrait_invalid_token_response', __( 'The service returned an invalid response (pairing_id).', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_invalid_token_response', __( 'The service returned an invalid response (pairing_id).', 'ctrlweb-site-portrait' ) );
 		}
 
 		$scopes = isset( $data['scopes'] ) ? array_values( array_intersect( $pending['scopes'], Scopes::sanitize( $data['scopes'] ) ) ) : $pending['scopes'];
 		if ( empty( $scopes ) ) {
-			return new WP_Error( 'site_portrait_invalid_token_response', __( 'The service returned an invalid response (scopes).', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_invalid_token_response', __( 'The service returned an invalid response (scopes).', 'ctrlweb-site-portrait' ) );
 		}
 
 		// Pin only keys that were also published in the discovery document.
@@ -207,7 +207,7 @@ final class Pairing {
 			}
 		}
 		if ( empty( $service_keys ) ) {
-			return new WP_Error( 'site_portrait_invalid_token_response', __( 'The service returned keys that do not match its discovery document.', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_invalid_token_response', __( 'The service returned keys that do not match its discovery document.', 'ctrlweb-site-portrait' ) );
 		}
 
 		unset( $discovery['keys'], $discovery['scopes_requested'], $discovery['scope_reasons'] );
@@ -457,7 +457,7 @@ final class Pairing {
 			return $response;
 		}
 		if ( 200 !== $response['status'] ) {
-			return Service_Client::error_from_response( $response, __( 'Notifying the service', 'site-portrait' ) );
+			return Service_Client::error_from_response( $response, __( 'Notifying the service', 'ctrlweb-site-portrait' ) );
 		}
 		return true;
 	}

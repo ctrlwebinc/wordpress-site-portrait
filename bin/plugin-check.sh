@@ -7,9 +7,9 @@ cd "$(dirname "$0")/.."
 bin/build-zip.sh >/dev/null
 npx wp-playground-cli php \
   --blueprint=tests/pcp-blueprint.json \
-  --mount="$PWD/build/site-portrait:/wordpress/wp-content/plugins/site-portrait" \
+  --mount="$PWD/build/ctrlweb-site-portrait:/wordpress/wp-content/plugins/ctrlweb-site-portrait" \
   --quiet \
-  -- /tmp/wp-cli.phar plugin check site-portrait \
+  -- /tmp/wp-cli.phar plugin check ctrlweb-site-portrait \
   --categories=plugin_repo --format=json \
   --error-severity=7 --warning-severity=6 \
   --include-low-severity-errors --exclude-checks=prefixing

@@ -11,7 +11,7 @@ import { signedFetch } from '../../bin/lib/client.mjs';
 import { signRequest } from '../../bin/lib/protocol.mjs';
 
 const ALL_SCOPES = ['core', 'plugins', 'themes', 'server', 'database', 'content', 'users_counts'];
-const SETTINGS = '/wp-admin/options-general.php?page=site-portrait';
+const SETTINGS = '/wp-admin/options-general.php?page=ctrlweb-site-portrait';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
@@ -102,7 +102,7 @@ test('portrait matches the JSON schema and contains no sensitive data', async ()
   assert.doesNotMatch(text, /@localhost|admin@/, 'no e-mail addresses');
   assert.doesNotMatch(text, /"(user_login|user_email|display_name|post_title|post_content|option_value)"/);
   assert.doesNotMatch(text, /DB_PASSWORD|AUTH_KEY|SECURE_AUTH|NONCE_SALT/);
-  const plugin = r.json.data.plugins.items.find((p) => p.slug === 'site-portrait');
+  const plugin = r.json.data.plugins.items.find((p) => p.slug === 'ctrlweb-site-portrait');
   assert.equal(plugin.active, true);
   assert.equal(r.json.data.users_counts.by_role.administrator, 1);
 });

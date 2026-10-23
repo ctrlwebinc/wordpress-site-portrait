@@ -9,7 +9,7 @@
     },
     {
       "step": "runPHP",
-      "code": "<?php\nrequire '/wordpress/wp-load.php';\nrequire_once ABSPATH . 'wp-admin/includes/plugin.php';\n$network = get_network();\n$id = wp_insert_site( array( 'domain' => $network->domain, 'path' => $network->path . 'shop/', 'title' => 'Shop', 'user_id' => 1 ) );\nswitch_to_blog( $id );\nfor ( $i = 0; $i < 3; $i++ ) {\n\twp_insert_post( array( 'post_title' => 'Product ' . $i, 'post_status' => 'publish', 'post_type' => 'post' ) );\n}\nupdate_option( 'active_plugins', array( 'hello.php' ) );\nrestore_current_blog();\n$result = activate_plugin( 'site-portrait/site-portrait.php', '', true );\necho is_wp_error( $result ) ? $result->get_error_message() : 'ok';\n"
+      "code": "<?php\nrequire '/wordpress/wp-load.php';\nrequire_once ABSPATH . 'wp-admin/includes/plugin.php';\n$network = get_network();\n$id = wp_insert_site( array( 'domain' => $network->domain, 'path' => $network->path . 'shop/', 'title' => 'Shop', 'user_id' => 1 ) );\nswitch_to_blog( $id );\nfor ( $i = 0; $i < 3; $i++ ) {\n\twp_insert_post( array( 'post_title' => 'Product ' . $i, 'post_status' => 'publish', 'post_type' => 'post' ) );\n}\nupdate_option( 'active_plugins', array( 'hello.php' ) );\nrestore_current_blog();\n$result = activate_plugin( 'ctrlweb-site-portrait/ctrlweb-site-portrait.php', '', true );\necho is_wp_error( $result ) ? $result->get_error_message() : 'ok';\n"
     }
   ]
 }

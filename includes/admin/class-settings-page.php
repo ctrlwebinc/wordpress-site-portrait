@@ -47,11 +47,12 @@ final class Settings_Page {
 	 * Adds the menu entry.
 	 */
 	public static function add_menu() {
-		$title = __( 'Site Portrait', 'site-portrait' );
+		$title = __( 'ctrlweb Site Portrait', 'ctrlweb-site-portrait' );
+		$menu  = __( 'Site Portrait', 'ctrlweb-site-portrait' );
 		if ( Plugin::is_network_mode() ) {
-			add_submenu_page( 'settings.php', $title, $title, Plugin::capability(), 'site-portrait', array( self::class, 'render' ) );
+			add_submenu_page( 'settings.php', $title, $menu, Plugin::capability(), 'ctrlweb-site-portrait', array( self::class, 'render' ) );
 		} else {
-			add_options_page( $title, $title, Plugin::capability(), 'site-portrait', array( self::class, 'render' ) );
+			add_options_page( $title, $menu, Plugin::capability(), 'ctrlweb-site-portrait', array( self::class, 'render' ) );
 		}
 	}
 
@@ -62,7 +63,7 @@ final class Settings_Page {
 	 * @return array
 	 */
 	public static function action_links( $links ) {
-		array_unshift( $links, '<a href="' . esc_url( Plugin::settings_url() ) . '">' . esc_html__( 'Settings', 'site-portrait' ) . '</a>' );
+		array_unshift( $links, '<a href="' . esc_url( Plugin::settings_url() ) . '">' . esc_html__( 'Settings', 'ctrlweb-site-portrait' ) . '</a>' );
 		return $links;
 	}
 
@@ -75,7 +76,7 @@ final class Settings_Page {
 			return;
 		}
 		echo '<div class="notice notice-warning"><p>';
-		esc_html_e( 'Site Portrait describes the whole server and database, so on a multisite network it must be network-activated by a super admin. It does nothing while activated on a single site; deactivate it here and network-activate it from the Network Admin.', 'site-portrait' );
+		esc_html_e( 'Site Portrait describes the whole server and database, so on a multisite network it must be network-activated by a super admin. It does nothing while activated on a single site; deactivate it here and network-activate it from the Network Admin.', 'ctrlweb-site-portrait' );
 		echo '</p></div>';
 	}
 
@@ -106,7 +107,7 @@ final class Settings_Page {
 		self::guard( 'site_portrait_connect' );
 		$discovery = Store::get_transient( self::discovery_key() );
 		if ( ! is_array( $discovery ) ) {
-			self::redirect_with_notice( 'error', __( 'The service information expired. Please look up the service again.', 'site-portrait' ) );
+			self::redirect_with_notice( 'error', __( 'The service information expired. Please look up the service again.', 'ctrlweb-site-portrait' ) );
 		}
 		$scopes = isset( $_POST['scopes'] ) ? array_map( 'sanitize_key', (array) wp_unslash( $_POST['scopes'] ) ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in guard().
 		$url    = Pairing::begin( $discovery, $scopes, get_current_user_id() );
@@ -143,7 +144,7 @@ final class Settings_Page {
 	public static function handle_callback() {
 		$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_key( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'site_portrait_callback' ) || ! current_user_can( Plugin::capability() ) ) {
-			wp_die( esc_html__( 'The link you followed has expired or you are not allowed to connect this site.', 'site-portrait' ), 403 );
+			wp_die( esc_html__( 'The link you followed has expired or you are not allowed to connect this site.', 'ctrlweb-site-portrait' ), 403 );
 		}
 		$user_id = get_current_user_id();
 
@@ -152,9 +153,9 @@ final class Settings_Page {
 			$error       = sanitize_key( wp_unslash( $_GET['error'] ) );
 			$description = isset( $_GET['error_description'] ) ? Service_Client::text( wp_unslash( $_GET['error_description'] ), 300 ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by Service_Client::text().
 			$message     = 'access_denied' === $error
-				? __( 'The connection was declined on the service side.', 'site-portrait' )
+				? __( 'The connection was declined on the service side.', 'ctrlweb-site-portrait' )
 				/* translators: %s: error code returned by the service. */
-				: sprintf( __( 'The service returned an error: %s', 'site-portrait' ), $error );
+				: sprintf( __( 'The service returned an error: %s', 'ctrlweb-site-portrait' ), $error );
 			self::redirect_with_notice( 'error', trim( $message . ' ' . $description ) );
 		}
 
@@ -164,7 +165,7 @@ final class Settings_Page {
 		if ( is_wp_error( $result ) ) {
 			self::redirect_with_notice( 'error', $result->get_error_message() );
 		}
-		self::redirect_with_notice( 'success', __( 'The site is now connected. The service can read the data categories you selected.', 'site-portrait' ) );
+		self::redirect_with_notice( 'success', __( 'The site is now connected. The service can read the data categories you selected.', 'ctrlweb-site-portrait' ) );
 	}
 
 	/**
@@ -188,10 +189,10 @@ final class Settings_Page {
 			self::redirect_with_notice(
 				'warning',
 				/* translators: %s: comma-separated list of invalid entries. */
-				sprintf( __( 'Settings saved, but these allow-list entries were ignored because they are not valid IP addresses or ranges: %s', 'site-portrait' ), implode( ', ', $parsed['invalid'] ) )
+				sprintf( __( 'Settings saved, but these allow-list entries were ignored because they are not valid IP addresses or ranges: %s', 'ctrlweb-site-portrait' ), implode( ', ', $parsed['invalid'] ) )
 			);
 		}
-		self::redirect_with_notice( 'success', __( 'Settings saved.', 'site-portrait' ) );
+		self::redirect_with_notice( 'success', __( 'Settings saved.', 'ctrlweb-site-portrait' ) );
 	}
 
 	/**
@@ -200,7 +201,7 @@ final class Settings_Page {
 	public static function handle_rotate() {
 		self::guard( 'site_portrait_rotate' );
 		Pairing::rotate_site_key();
-		self::redirect_with_notice( 'success', __( 'A new site key was generated. The service will pick it up automatically.', 'site-portrait' ) );
+		self::redirect_with_notice( 'success', __( 'A new site key was generated. The service will pick it up automatically.', 'ctrlweb-site-portrait' ) );
 	}
 
 	/**
@@ -213,10 +214,10 @@ final class Settings_Page {
 			self::redirect_with_notice(
 				'warning',
 				/* translators: %s: error message. */
-				sprintf( __( 'The site is disconnected and the service can no longer read any data. However the service could not be notified: %s', 'site-portrait' ), $result->get_error_message() )
+				sprintf( __( 'The site is disconnected and the service can no longer read any data. However the service could not be notified: %s', 'ctrlweb-site-portrait' ), $result->get_error_message() )
 			);
 		}
-		self::redirect_with_notice( 'success', __( 'The site is disconnected and the service was notified.', 'site-portrait' ) );
+		self::redirect_with_notice( 'success', __( 'The site is disconnected and the service was notified.', 'ctrlweb-site-portrait' ) );
 	}
 
 	/*
@@ -236,12 +237,12 @@ final class Settings_Page {
 		$discovery = null === $pairing ? Store::get_transient( self::discovery_key() ) : false;
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Site Portrait', 'site-portrait' ); ?></h1>
+			<h1><?php esc_html_e( 'ctrlweb Site Portrait', 'ctrlweb-site-portrait' ); ?></h1>
 			<?php
 			self::render_notice();
 
 			if ( Plugin::is_dev_mode() ) {
-				echo '<div class="notice notice-warning"><p>' . esc_html__( 'Development mode is active (SITE_PORTRAIT_DEV_MODE): unencrypted HTTP and local addresses are accepted. Never use this on a production site.', 'site-portrait' ) . '</p></div>';
+				echo '<div class="notice notice-warning"><p>' . esc_html__( 'Development mode is active (SITE_PORTRAIT_DEV_MODE): unencrypted HTTP and local addresses are accepted. Never use this on a production site.', 'ctrlweb-site-portrait' ) . '</p></div>';
 			}
 
 			if ( null !== $pairing ) {
@@ -263,19 +264,19 @@ final class Settings_Page {
 	 */
 	private static function render_lookup() {
 		?>
-		<p><?php esc_html_e( 'Site Portrait lets a service you choose (for example a hosting provider) read a technical description of this site to recommend suitable hosting. It is disabled until you connect a service, and nothing is sent anywhere before you confirm.', 'site-portrait' ); ?></p>
+		<p><?php esc_html_e( 'Site Portrait lets a service you choose (for example a hosting provider) read a technical description of this site to recommend suitable hosting. It is disabled until you connect a service, and nothing is sent anywhere before you confirm.', 'ctrlweb-site-portrait' ); ?></p>
 		<form method="post" action="<?php echo esc_url( Plugin::action_url( 'discover' ) ); ?>">
 			<?php wp_nonce_field( 'site_portrait_discover' ); ?>
 			<table class="form-table" role="presentation">
 				<tr>
-					<th scope="row"><label for="site-portrait-service-url"><?php esc_html_e( 'Service address', 'site-portrait' ); ?></label></th>
+					<th scope="row"><label for="site-portrait-service-url"><?php esc_html_e( 'Service address', 'ctrlweb-site-portrait' ); ?></label></th>
 					<td>
 						<input type="url" class="regular-text code" id="site-portrait-service-url" name="service_url" placeholder="https://service.example" required>
-						<p class="description"><?php esc_html_e( 'Provided by the service. This site will read the service description at this address and show it to you before anything else happens.', 'site-portrait' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Provided by the service. This site will read the service description at this address and show it to you before anything else happens.', 'ctrlweb-site-portrait' ); ?></p>
 					</td>
 				</tr>
 			</table>
-			<?php submit_button( __( 'Look up service', 'site-portrait' ), 'primary', 'submit', false ); ?>
+			<?php submit_button( __( 'Look up service', 'ctrlweb-site-portrait' ), 'primary', 'submit', false ); ?>
 		</form>
 		<?php
 	}
@@ -291,12 +292,12 @@ final class Settings_Page {
 		<h2>
 			<?php
 			/* translators: %s: service name. */
-			echo esc_html( sprintf( __( 'Connect to %s?', 'site-portrait' ), $discovery['name'] ) );
+			echo esc_html( sprintf( __( 'Connect to %s?', 'ctrlweb-site-portrait' ), $discovery['name'] ) );
 			?>
 		</h2>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Service', 'site-portrait' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Service', 'ctrlweb-site-portrait' ); ?></th>
 				<td>
 					<strong><?php echo esc_html( $discovery['name'] ); ?></strong> — <code><?php echo esc_html( $discovery['origin'] ); ?></code>
 					<?php if ( '' !== $discovery['description'] ) : ?>
@@ -305,11 +306,11 @@ final class Settings_Page {
 				</td>
 			</tr>
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Privacy', 'site-portrait' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Privacy', 'ctrlweb-site-portrait' ); ?></th>
 				<td>
-					<a href="<?php echo esc_url( $discovery['privacy_policy_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Privacy policy', 'site-portrait' ); ?></a>
+					<a href="<?php echo esc_url( $discovery['privacy_policy_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Privacy policy', 'ctrlweb-site-portrait' ); ?></a>
 					<?php if ( '' !== $discovery['terms_url'] ) : ?>
-						| <a href="<?php echo esc_url( $discovery['terms_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Terms of use', 'site-portrait' ); ?></a>
+						| <a href="<?php echo esc_url( $discovery['terms_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Terms of use', 'ctrlweb-site-portrait' ); ?></a>
 					<?php endif; ?>
 					<?php if ( '' !== $discovery['contact'] ) : ?>
 						| <?php echo esc_html( $discovery['contact'] ); ?>
@@ -320,8 +321,8 @@ final class Settings_Page {
 
 		<form method="post" action="<?php echo esc_url( Plugin::action_url( 'connect' ) ); ?>">
 			<?php wp_nonce_field( 'site_portrait_connect' ); ?>
-			<h3><?php esc_html_e( 'Data the service may read', 'site-portrait' ); ?></h3>
-			<p><?php esc_html_e( 'The service can only read the categories you tick. It can never change anything on this site. You can change this choice or disconnect at any time.', 'site-portrait' ); ?></p>
+			<h3><?php esc_html_e( 'Data the service may read', 'ctrlweb-site-portrait' ); ?></h3>
+			<p><?php esc_html_e( 'The service can only read the categories you tick. It can never change anything on this site. You can change this choice or disconnect at any time.', 'ctrlweb-site-portrait' ); ?></p>
 			<fieldset>
 				<?php foreach ( $discovery['scopes_supported'] as $scope ) : ?>
 					<p>
@@ -334,7 +335,7 @@ final class Settings_Page {
 							<br><em>
 							<?php
 							/* translators: %s: justification provided by the service. */
-							echo esc_html( sprintf( __( 'Why the service asks: %s', 'site-portrait' ), $discovery['scope_reasons'][ $scope ] ) );
+							echo esc_html( sprintf( __( 'Why the service asks: %s', 'ctrlweb-site-portrait' ), $discovery['scope_reasons'][ $scope ] ) );
 							?>
 							</em>
 						<?php endif; ?>
@@ -342,14 +343,14 @@ final class Settings_Page {
 				<?php endforeach; ?>
 			</fieldset>
 			<?php if ( Plugin::is_network_mode() ) : ?>
-				<p><?php esc_html_e( 'Network mode: the service will also be able to list the addresses of all sites of this network, and their counts for the categories you tick.', 'site-portrait' ); ?></p>
+				<p><?php esc_html_e( 'Network mode: the service will also be able to list the addresses of all sites of this network, and their counts for the categories you tick.', 'ctrlweb-site-portrait' ); ?></p>
 			<?php endif; ?>
-			<p><?php esc_html_e( 'Clicking Connect sends you to the service to sign in and approve. The service then receives this site’s address and a public key, and this site stores the service’s public key.', 'site-portrait' ); ?></p>
-			<?php submit_button( __( 'Connect', 'site-portrait' ), 'primary', 'submit', false ); ?>
+			<p><?php esc_html_e( 'Clicking Connect sends you to the service to sign in and approve. The service then receives this site’s address and a public key, and this site stores the service’s public key.', 'ctrlweb-site-portrait' ); ?></p>
+			<?php submit_button( __( 'Connect', 'ctrlweb-site-portrait' ), 'primary', 'submit', false ); ?>
 		</form>
 		<form method="post" action="<?php echo esc_url( Plugin::action_url( 'cancel' ) ); ?>" style="margin-top:1em">
 			<?php wp_nonce_field( 'site_portrait_cancel' ); ?>
-			<?php submit_button( __( 'Cancel', 'site-portrait' ), 'secondary', 'submit', false ); ?>
+			<?php submit_button( __( 'Cancel', 'ctrlweb-site-portrait' ), 'secondary', 'submit', false ); ?>
 		</form>
 		<?php
 	}
@@ -365,39 +366,39 @@ final class Settings_Page {
 		$settings     = Store::settings();
 		$date_format  = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
 		?>
-		<h2><?php esc_html_e( 'Connected service', 'site-portrait' ); ?></h2>
+		<h2><?php esc_html_e( 'Connected service', 'ctrlweb-site-portrait' ); ?></h2>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Service', 'site-portrait' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Service', 'ctrlweb-site-portrait' ); ?></th>
 				<td>
 					<strong><?php echo esc_html( $service['name'] ); ?></strong> — <code><?php echo esc_html( $service['origin'] ); ?></code>
-					<br><a href="<?php echo esc_url( $service['privacy_policy_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Privacy policy', 'site-portrait' ); ?></a>
+					<br><a href="<?php echo esc_url( $service['privacy_policy_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Privacy policy', 'ctrlweb-site-portrait' ); ?></a>
 				</td>
 			</tr>
 			<?php if ( '' !== $pairing['account_hint'] ) : ?>
 				<tr>
-					<th scope="row"><?php esc_html_e( 'Account', 'site-portrait' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'Account', 'ctrlweb-site-portrait' ); ?></th>
 					<td><?php echo esc_html( $pairing['account_hint'] ); ?></td>
 				</tr>
 			<?php endif; ?>
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Connected on', 'site-portrait' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Connected on', 'ctrlweb-site-portrait' ); ?></th>
 				<td>
 					<?php echo esc_html( wp_date( $date_format, $pairing['connected_at'] ) ); ?>
 					<?php if ( empty( $pairing['confirmed_at'] ) ) : ?>
-						— <em><?php esc_html_e( 'waiting for the service to confirm', 'site-portrait' ); ?></em>
+						— <em><?php esc_html_e( 'waiting for the service to confirm', 'ctrlweb-site-portrait' ); ?></em>
 					<?php endif; ?>
 				</td>
 			</tr>
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Pairing ID', 'site-portrait' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Pairing ID', 'ctrlweb-site-portrait' ); ?></th>
 				<td><code><?php echo esc_html( $pairing['pairing_id'] ); ?></code></td>
 			</tr>
 		</table>
 
 		<form method="post" action="<?php echo esc_url( Plugin::action_url( 'save' ) ); ?>">
 			<?php wp_nonce_field( 'site_portrait_save' ); ?>
-			<h2><?php esc_html_e( 'Data the service may read', 'site-portrait' ); ?></h2>
+			<h2><?php esc_html_e( 'Data the service may read', 'ctrlweb-site-portrait' ); ?></h2>
 			<fieldset>
 				<?php foreach ( $service['scopes_supported'] as $scope ) : ?>
 					<p>
@@ -410,36 +411,36 @@ final class Settings_Page {
 				<?php endforeach; ?>
 			</fieldset>
 
-			<h2><?php esc_html_e( 'Allowed IP addresses', 'site-portrait' ); ?></h2>
+			<h2><?php esc_html_e( 'Allowed IP addresses', 'ctrlweb-site-portrait' ); ?></h2>
 			<p>
-				<label for="site-portrait-ip-allowlist"><?php esc_html_e( 'Optional. One IP address or CIDR range per line (IPv4 or IPv6). When set, requests from other addresses are refused.', 'site-portrait' ); ?></label>
+				<label for="site-portrait-ip-allowlist"><?php esc_html_e( 'Optional. One IP address or CIDR range per line (IPv4 or IPv6). When set, requests from other addresses are refused.', 'ctrlweb-site-portrait' ); ?></label>
 			</p>
 			<textarea class="large-text code" rows="4" id="site-portrait-ip-allowlist" name="ip_allowlist"><?php echo esc_textarea( implode( "\n", $settings['ip_allowlist'] ) ); ?></textarea>
 			<?php submit_button(); ?>
 		</form>
 
-		<h2><?php esc_html_e( 'Keys', 'site-portrait' ); ?></h2>
+		<h2><?php esc_html_e( 'Keys', 'ctrlweb-site-portrait' ); ?></h2>
 		<p>
 			<?php
 			/* translators: %s: key identifier. */
-			echo esc_html( sprintf( __( 'Site key: %s', 'site-portrait' ), $pairing['site_key']['kid'] ) );
+			echo esc_html( sprintf( __( 'Site key: %s', 'ctrlweb-site-portrait' ), $pairing['site_key']['kid'] ) );
 			?>
 			<br>
 			<?php
 			/* translators: %s: comma-separated key identifiers. */
-			echo esc_html( sprintf( __( 'Trusted service keys: %s', 'site-portrait' ), implode( ', ', array_keys( $pairing['service_keys'] ) ) ) );
+			echo esc_html( sprintf( __( 'Trusted service keys: %s', 'ctrlweb-site-portrait' ), implode( ', ', array_keys( $pairing['service_keys'] ) ) ) );
 			?>
 		</p>
 		<form method="post" action="<?php echo esc_url( Plugin::action_url( 'rotate' ) ); ?>">
 			<?php wp_nonce_field( 'site_portrait_rotate' ); ?>
-			<?php submit_button( __( 'Generate a new site key', 'site-portrait' ), 'secondary', 'submit', false ); ?>
+			<?php submit_button( __( 'Generate a new site key', 'ctrlweb-site-portrait' ), 'secondary', 'submit', false ); ?>
 		</form>
 
-		<h2><?php esc_html_e( 'Disconnect', 'site-portrait' ); ?></h2>
-		<p><?php esc_html_e( 'Disconnecting takes effect immediately: the service can no longer read anything, and its key is deleted from this site. The service is then notified.', 'site-portrait' ); ?></p>
-		<form method="post" action="<?php echo esc_url( Plugin::action_url( 'disconnect' ) ); ?>" onsubmit="return window.confirm('<?php echo esc_js( __( 'Disconnect this site from the service?', 'site-portrait' ) ); ?>');">
+		<h2><?php esc_html_e( 'Disconnect', 'ctrlweb-site-portrait' ); ?></h2>
+		<p><?php esc_html_e( 'Disconnecting takes effect immediately: the service can no longer read anything, and its key is deleted from this site. The service is then notified.', 'ctrlweb-site-portrait' ); ?></p>
+		<form method="post" action="<?php echo esc_url( Plugin::action_url( 'disconnect' ) ); ?>" onsubmit="return window.confirm('<?php echo esc_js( __( 'Disconnect this site from the service?', 'ctrlweb-site-portrait' ) ); ?>');">
 			<?php wp_nonce_field( 'site_portrait_disconnect' ); ?>
-			<?php submit_button( __( 'Disconnect', 'site-portrait' ), 'delete', 'submit', false ); ?>
+			<?php submit_button( __( 'Disconnect', 'ctrlweb-site-portrait' ), 'delete', 'submit', false ); ?>
 		</form>
 		<?php
 	}
@@ -456,16 +457,16 @@ final class Settings_Page {
 		$date_format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
 		$pages       = (int) ceil( $log['total'] / 50 );
 		?>
-		<h2><?php esc_html_e( 'Access log', 'site-portrait' ); ?></h2>
-		<p class="description"><?php esc_html_e( 'Requests received on the Site Portrait API during the last 90 days.', 'site-portrait' ); ?></p>
+		<h2><?php esc_html_e( 'Access log', 'ctrlweb-site-portrait' ); ?></h2>
+		<p class="description"><?php esc_html_e( 'Requests received on the Site Portrait API during the last 90 days.', 'ctrlweb-site-portrait' ); ?></p>
 		<table class="widefat striped">
 			<thead>
 				<tr>
-					<th scope="col"><?php esc_html_e( 'Date', 'site-portrait' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'IP address', 'site-portrait' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Request', 'site-portrait' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Data categories', 'site-portrait' ); ?></th>
-					<th scope="col"><?php esc_html_e( 'Result', 'site-portrait' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Date', 'ctrlweb-site-portrait' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'IP address', 'ctrlweb-site-portrait' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Request', 'ctrlweb-site-portrait' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Data categories', 'ctrlweb-site-portrait' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Result', 'ctrlweb-site-portrait' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -528,7 +529,7 @@ final class Settings_Page {
 	 */
 	private static function guard( $action ) {
 		if ( ! current_user_can( Plugin::capability() ) ) {
-			wp_die( esc_html__( 'You are not allowed to manage Site Portrait.', 'site-portrait' ), 403 );
+			wp_die( esc_html__( 'You are not allowed to manage Site Portrait.', 'ctrlweb-site-portrait' ), 403 );
 		}
 		check_admin_referer( $action );
 	}

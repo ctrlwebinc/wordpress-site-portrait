@@ -1,6 +1,6 @@
 {
-    "name": "ctrlweb/site-portrait",
-    "description": "Development tooling for the Site Portrait WordPress plugin. The plugin itself has no Composer runtime dependency.",
+    "name": "ctrlweb/ctrlweb-site-portrait",
+    "description": "Development tooling for the ctrlweb Site Portrait WordPress plugin. The plugin itself has no Composer runtime dependency.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
     "require-dev": {

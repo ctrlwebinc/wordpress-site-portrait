@@ -33,7 +33,7 @@ final class Service_Client {
 		}
 		$origin = Plugin::origin( $input );
 		if ( null === $origin || ! Plugin::is_allowed_service_url( $origin ) ) {
-			return new WP_Error( 'site_portrait_invalid_service_url', __( 'Enter the HTTPS address of the service, for example https://service.example.', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_invalid_service_url', __( 'Enter the HTTPS address of the service, for example https://service.example.', 'ctrlweb-site-portrait' ) );
 		}
 
 		$response = self::request( 'GET', $origin . self::DISCOVERY_PATH, null, null, 10, self::MAX_DISCOVERY_SIZE );
@@ -44,12 +44,12 @@ final class Service_Client {
 			return new WP_Error(
 				'site_portrait_discovery_failed',
 				/* translators: %d: HTTP status code. */
-				sprintf( __( 'The service did not publish a Site Portrait discovery document (HTTP status %d).', 'site-portrait' ), $response['status'] )
+				sprintf( __( 'The service did not publish a Site Portrait discovery document (HTTP status %d).', 'ctrlweb-site-portrait' ), $response['status'] )
 			);
 		}
 		$document = json_decode( $response['body'], true );
 		if ( ! is_array( $document ) ) {
-			return new WP_Error( 'site_portrait_discovery_invalid', __( 'The service discovery document is not valid JSON.', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_discovery_invalid', __( 'The service discovery document is not valid JSON.', 'ctrlweb-site-portrait' ) );
 		}
 		return self::validate_discovery( $document, $origin );
 	}
@@ -66,7 +66,7 @@ final class Service_Client {
 			return new WP_Error(
 				'site_portrait_discovery_invalid',
 				/* translators: %s: name of the invalid member, e.g. token_endpoint. */
-				sprintf( __( 'The service discovery document is invalid (%s).', 'site-portrait' ), $what )
+				sprintf( __( 'The service discovery document is invalid (%s).', 'ctrlweb-site-portrait' ), $what )
 			);
 		};
 
@@ -74,7 +74,7 @@ final class Service_Client {
 			return $invalid( 'protocol' );
 		}
 		if ( ! is_array( $doc['protocol_versions'] ?? null ) || ! in_array( '1', $doc['protocol_versions'], true ) ) {
-			return new WP_Error( 'site_portrait_discovery_version', __( 'The service does not support version 1 of the Site Portrait protocol.', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_discovery_version', __( 'The service does not support version 1 of the Site Portrait protocol.', 'ctrlweb-site-portrait' ) );
 		}
 
 		$service = is_array( $doc['service'] ?? null ) ? $doc['service'] : array();
@@ -179,7 +179,7 @@ final class Service_Client {
 	 */
 	public static function request( $method, $url, $body = null, $signer = null, $timeout = 15, $max_size = 1048576 ) {
 		if ( ! Plugin::is_allowed_service_url( $url ) ) {
-			return new WP_Error( 'site_portrait_invalid_service_url', __( 'The service address must use HTTPS.', 'site-portrait' ) );
+			return new WP_Error( 'site_portrait_invalid_service_url', __( 'The service address must use HTTPS.', 'ctrlweb-site-portrait' ) );
 		}
 
 		$headers = array(
@@ -215,7 +215,7 @@ final class Service_Client {
 			return new WP_Error(
 				'site_portrait_http_error',
 				/* translators: %s: error message. */
-				sprintf( __( 'Could not reach the service: %s', 'site-portrait' ), $response->get_error_message() )
+				sprintf( __( 'Could not reach the service: %s', 'ctrlweb-site-portrait' ), $response->get_error_message() )
 			);
 		}
 
@@ -246,7 +246,7 @@ final class Service_Client {
 			'site_portrait_service_error',
 			sprintf(
 				/* translators: 1: what failed, 2: HTTP status code, 3: error details from the service. */
-				__( '%1$s failed (HTTP %2$d). %3$s', 'site-portrait' ),
+				__( '%1$s failed (HTTP %2$d). %3$s', 'ctrlweb-site-portrait' ),
 				$context,
 				$response['status'],
 				$detail

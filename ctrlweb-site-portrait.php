@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name:       Site Portrait
- * Description:       Lets a service you choose securely read a technical portrait of your site to recommend suitable hosting.
+ * Plugin Name:       ctrlweb Site Portrait
+ * Description:       Lets any compatible service you choose securely read a technical portrait of your site to recommend suitable hosting.
  * Version:           1.0.0
  * Requires at least: 6.4
  * Requires PHP:      7.4
@@ -9,7 +9,7 @@
  * Author URI:        https://ctrlweb.ca
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       site-portrait
+ * Text Domain:       ctrlweb-site-portrait
  * Network:           true
  *
  * @package Site_Portrait

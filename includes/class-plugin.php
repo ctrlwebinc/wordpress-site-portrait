@@ -197,6 +197,6 @@ final class Plugin {
 	 */
 	public static function settings_url( array $args = array() ) {
 		$base = self::is_network_mode() ? network_admin_url( 'settings.php' ) : admin_url( 'options-general.php' );
-		return add_query_arg( array_merge( array( 'page' => 'site-portrait' ), $args ), $base );
+		return add_query_arg( array_merge( array( 'page' => 'ctrlweb-site-portrait' ), $args ), $base );
 	}
 }

@@ -7,7 +7,9 @@ under [Creative Commons Attribution 4.0 International](LICENSE) (CC-BY-4.0).
 The reference client in `bin/` is licensed under the Apache License 2.0, and the
 WordPress plugin under the GPL, version 2 or later.
 
-This document specifies how a WordPress site running the *Site Portrait* plugin
+This document specifies how a WordPress site running a Site Portrait plugin
+(the reference implementation is *ctrlweb Site Portrait*, slug
+`ctrlweb-site-portrait`)
 and an external service chosen by the site administrator ("the service") pair
 with each other, and how the service then retrieves a read-only, privacy-minimised
 technical portrait of the site (software versions, server capacity, database

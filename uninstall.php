@@ -11,7 +11,7 @@ if ( ! defined( 'SITE_PORTRAIT_VERSION' ) ) {
 	define( 'SITE_PORTRAIT_VERSION', '1.0.0' );
 }
 if ( ! defined( 'SITE_PORTRAIT_FILE' ) ) {
-	define( 'SITE_PORTRAIT_FILE', __DIR__ . '/site-portrait.php' );
+	define( 'SITE_PORTRAIT_FILE', __DIR__ . '/ctrlweb-site-portrait.php' );
 }
 
 require_once __DIR__ . '/includes/autoload.php';

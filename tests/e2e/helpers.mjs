@@ -20,7 +20,7 @@ export async function startWordPress({ port = 9411, php = process.env.SP_PHP ?? 
     [
       'wp-playground-cli', 'server',
       `--port=${port}`, `--php=${php}`, `--site-url=${url}`,
-      `--mount=${ROOT}:/wordpress/wp-content/plugins/site-portrait`,
+      `--mount=${ROOT}:/wordpress/wp-content/plugins/ctrlweb-site-portrait`,
       `--blueprint=${path.join(ROOT, 'tests/e2e', blueprint)}`,
       '--define', 'WP_ENVIRONMENT_TYPE', 'local',
       '--define-bool', 'SITE_PORTRAIT_DEV_MODE', 'true',

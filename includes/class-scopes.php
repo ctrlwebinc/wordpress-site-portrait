@@ -55,32 +55,32 @@ final class Scopes {
 	public static function descriptions() {
 		return array(
 			'core'         => array(
-				'label'       => __( 'WordPress core', 'site-portrait' ),
-				'description' => __( 'WordPress version and available update, languages, multisite summary, environment type, HTTPS, permalink type, debug flags, cron health, object and page cache detection.', 'site-portrait' ),
+				'label'       => __( 'WordPress core', 'ctrlweb-site-portrait' ),
+				'description' => __( 'WordPress version and available update, languages, multisite summary, environment type, HTTPS, permalink type, debug flags, cron health, object and page cache detection.', 'ctrlweb-site-portrait' ),
 			),
 			'plugins'      => array(
-				'label'       => __( 'Plugins', 'site-portrait' ),
-				'description' => __( 'Installed plugins with version, status and available update; must-use plugins and drop-ins.', 'site-portrait' ),
+				'label'       => __( 'Plugins', 'ctrlweb-site-portrait' ),
+				'description' => __( 'Installed plugins with version, status and available update; must-use plugins and drop-ins.', 'ctrlweb-site-portrait' ),
 			),
 			'themes'       => array(
-				'label'       => __( 'Themes', 'site-portrait' ),
-				'description' => __( 'Installed themes with version, active and parent theme, available update.', 'site-portrait' ),
+				'label'       => __( 'Themes', 'ctrlweb-site-portrait' ),
+				'description' => __( 'Installed themes with version, active and parent theme, available update.', 'ctrlweb-site-portrait' ),
 			),
 			'server'       => array(
-				'label'       => __( 'Server', 'site-portrait' ),
-				'description' => __( 'Operating system family, web server, PHP version, extensions and limits, OPcache, CPU count, memory and disk space. No host names, IP addresses or paths.', 'site-portrait' ),
+				'label'       => __( 'Server', 'ctrlweb-site-portrait' ),
+				'description' => __( 'Operating system family, web server, PHP version, extensions and limits, OPcache, CPU count, memory and disk space. No host names, IP addresses or paths.', 'ctrlweb-site-portrait' ),
 			),
 			'database'     => array(
-				'label'       => __( 'Database', 'site-portrait' ),
-				'description' => __( 'Database engine and version, total size, number of tables, largest tables, autoloaded options size. No credentials or table prefix.', 'site-portrait' ),
+				'label'       => __( 'Database', 'ctrlweb-site-portrait' ),
+				'description' => __( 'Database engine and version, total size, number of tables, largest tables, autoloaded options size. No credentials or table prefix.', 'ctrlweb-site-portrait' ),
 			),
 			'content'      => array(
-				'label'       => __( 'Content volumes', 'site-portrait' ),
-				'description' => __( 'Number of posts per type and status, media files, taxonomy terms and comments; size of the uploads, plugins and themes folders. Counts only, never content.', 'site-portrait' ),
+				'label'       => __( 'Content volumes', 'ctrlweb-site-portrait' ),
+				'description' => __( 'Number of posts per type and status, media files, taxonomy terms and comments; size of the uploads, plugins and themes folders. Counts only, never content.', 'ctrlweb-site-portrait' ),
 			),
 			'users_counts' => array(
-				'label'       => __( 'User counts', 'site-portrait' ),
-				'description' => __( 'Number of users per role. Never names, logins or email addresses.', 'site-portrait' ),
+				'label'       => __( 'User counts', 'ctrlweb-site-portrait' ),
+				'description' => __( 'Number of users per role. Never names, logins or email addresses.', 'ctrlweb-site-portrait' ),
 			),
 		);
 	}

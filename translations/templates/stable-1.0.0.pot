@@ -1,0 +1,381 @@
+# Translation of Plugins - ctrlweb Site Portrait - Stable (latest release) in French (Canada)
+# This file is distributed under the same license as the Plugins - ctrlweb Site Portrait - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: +0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: GlotPress/4.1.0\n"
+"Language: fr_CA\n"
+"Project-Id-Version: Plugins - ctrlweb Site Portrait - Stable (latest release)\n"
+
+#. translators: 1: what failed, 2: HTTP status code, 3: error details from the
+#. service.
+#: includes/class-service-client.php:249
+msgid "%1$s failed (HTTP %2$d). %3$s"
+msgstr ""
+
+#. translators: %s: error message.
+#: includes/class-service-client.php:218
+msgid "Could not reach the service: %s"
+msgstr ""
+
+#: includes/class-service-client.php:182
+msgid "The service address must use HTTPS."
+msgstr ""
+
+#: includes/class-service-client.php:77
+msgid "The service does not support version 1 of the Site Portrait protocol."
+msgstr ""
+
+#. translators: %s: name of the invalid member, e.g. token_endpoint.
+#: includes/class-service-client.php:69
+msgid "The service discovery document is invalid (%s)."
+msgstr ""
+
+#: includes/class-service-client.php:52
+msgid "The service discovery document is not valid JSON."
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: includes/class-service-client.php:47
+msgid "The service did not publish a Site Portrait discovery document (HTTP status %d)."
+msgstr ""
+
+#: includes/class-service-client.php:36
+msgid "Enter the HTTPS address of the service, for example https://service.example."
+msgstr ""
+
+#: includes/class-scopes.php:83
+msgid "Number of users per role. Never names, logins or email addresses."
+msgstr ""
+
+#: includes/class-scopes.php:82
+msgid "User counts"
+msgstr ""
+
+#: includes/class-scopes.php:79
+msgid "Number of posts per type and status, media files, taxonomy terms and comments; size of the uploads, plugins and themes folders. Counts only, never content."
+msgstr ""
+
+#: includes/class-scopes.php:78
+msgid "Content volumes"
+msgstr ""
+
+#: includes/class-scopes.php:75
+msgid "Database engine and version, total size, number of tables, largest tables, autoloaded options size. No credentials or table prefix."
+msgstr ""
+
+#: includes/class-scopes.php:74
+msgid "Database"
+msgstr ""
+
+#: includes/class-scopes.php:71
+msgid "Operating system family, web server, PHP version, extensions and limits, OPcache, CPU count, memory and disk space. No host names, IP addresses or paths."
+msgstr ""
+
+#: includes/class-scopes.php:70
+msgid "Server"
+msgstr ""
+
+#: includes/class-scopes.php:67
+msgid "Installed themes with version, active and parent theme, available update."
+msgstr ""
+
+#: includes/class-scopes.php:66
+msgid "Themes"
+msgstr ""
+
+#: includes/class-scopes.php:63
+msgid "Installed plugins with version, status and available update; must-use plugins and drop-ins."
+msgstr ""
+
+#: includes/class-scopes.php:62
+msgid "Plugins"
+msgstr ""
+
+#: includes/class-scopes.php:59
+msgid "WordPress version and available update, languages, multisite summary, environment type, HTTPS, permalink type, debug flags, cron health, object and page cache detection."
+msgstr ""
+
+#: includes/class-scopes.php:58
+msgid "WordPress core"
+msgstr ""
+
+#: includes/class-pairing.php:460
+msgid "Notifying the service"
+msgstr ""
+
+#: includes/class-pairing.php:210
+msgid "The service returned keys that do not match its discovery document."
+msgstr ""
+
+#: includes/class-pairing.php:199
+msgid "The service returned an invalid response (scopes)."
+msgstr ""
+
+#: includes/class-pairing.php:194
+msgid "The service returned an invalid response (pairing_id)."
+msgstr ""
+
+#: includes/class-pairing.php:189
+msgid "The code exchange with the service"
+msgstr ""
+
+#: includes/class-pairing.php:155
+msgid "This site is already connected to a service. Disconnect it first."
+msgstr ""
+
+#: includes/class-pairing.php:152
+msgid "The service returned an invalid authorization code."
+msgstr ""
+
+#: includes/class-pairing.php:149
+msgid "The connection request expired or was not started from this site. Please start again."
+msgstr ""
+
+#: includes/class-pairing.php:74
+msgid "Select at least one category of data to share."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:532
+msgid "You are not allowed to manage Site Portrait."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:469
+msgid "Result"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:468
+msgid "Data categories"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:467
+msgid "Request"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:466
+msgid "IP address"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:465
+msgid "Date"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:461
+msgid "Requests received on the Site Portrait API during the last 90 days."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:460
+msgid "Access log"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:441
+msgid "Disconnect this site from the service?"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:440
+msgid "Disconnecting takes effect immediately: the service can no longer read anything, and its key is deleted from this site. The service is then notified."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:439
+#: includes/admin/class-settings-page.php:443
+msgid "Disconnect"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:436
+msgid "Generate a new site key"
+msgstr ""
+
+#. translators: %s: comma-separated key identifiers.
+#: includes/admin/class-settings-page.php:431
+msgid "Trusted service keys: %s"
+msgstr ""
+
+#. translators: %s: key identifier.
+#: includes/admin/class-settings-page.php:426
+msgid "Site key: %s"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:422
+msgid "Keys"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:416
+msgid "Optional. One IP address or CIDR range per line (IPv4 or IPv6). When set, requests from other addresses are refused."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:414
+msgid "Allowed IP addresses"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:394
+msgid "Pairing ID"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:389
+msgid "waiting for the service to confirm"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:385
+msgid "Connected on"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:380
+msgid "Account"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:369
+msgid "Connected service"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:353
+msgid "Cancel"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:349
+msgid "Connect"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:348
+msgid "Clicking Connect sends you to the service to sign in and approve. The service then receives this site’s address and a public key, and this site stores the service’s public key."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:346
+msgid "Network mode: the service will also be able to list the addresses of all sites of this network, and their counts for the categories you tick."
+msgstr ""
+
+#. translators: %s: justification provided by the service.
+#: includes/admin/class-settings-page.php:338
+msgid "Why the service asks: %s"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:325
+msgid "The service can only read the categories you tick. It can never change anything on this site. You can change this choice or disconnect at any time."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:324
+#: includes/admin/class-settings-page.php:401
+msgid "Data the service may read"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:313
+msgid "Terms of use"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:311
+#: includes/admin/class-settings-page.php:375
+msgid "Privacy policy"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:309
+msgid "Privacy"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:300
+#: includes/admin/class-settings-page.php:372
+msgid "Service"
+msgstr ""
+
+#. translators: %s: service name.
+#: includes/admin/class-settings-page.php:295
+msgid "Connect to %s?"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:279
+msgid "Look up service"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:275
+msgid "Provided by the service. This site will read the service description at this address and show it to you before anything else happens."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:272
+msgid "Service address"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:267
+msgid "Site Portrait lets a service you choose (for example a hosting provider) read a technical description of this site to recommend suitable hosting. It is disabled until you connect a service, and nothing is sent anywhere before you confirm."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:245
+msgid "Development mode is active (SITE_PORTRAIT_DEV_MODE): unencrypted HTTP and local addresses are accepted. Never use this on a production site."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:220
+msgid "The site is disconnected and the service was notified."
+msgstr ""
+
+#. translators: %s: error message.
+#: includes/admin/class-settings-page.php:217
+msgid "The site is disconnected and the service can no longer read any data. However the service could not be notified: %s"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:204
+msgid "A new site key was generated. The service will pick it up automatically."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:195
+msgid "Settings saved."
+msgstr ""
+
+#. translators: %s: comma-separated list of invalid entries.
+#: includes/admin/class-settings-page.php:192
+msgid "Settings saved, but these allow-list entries were ignored because they are not valid IP addresses or ranges: %s"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:168
+msgid "The site is now connected. The service can read the data categories you selected."
+msgstr ""
+
+#. translators: %s: error code returned by the service.
+#: includes/admin/class-settings-page.php:158
+msgid "The service returned an error: %s"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:156
+msgid "The connection was declined on the service side."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:147
+msgid "The link you followed has expired or you are not allowed to connect this site."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:110
+msgid "The service information expired. Please look up the service again."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:79
+msgid "Site Portrait describes the whole server and database, so on a multisite network it must be network-activated by a super admin. It does nothing while activated on a single site; deactivate it here and network-activate it from the Network Admin."
+msgstr ""
+
+#: includes/admin/class-settings-page.php:66
+msgid "Settings"
+msgstr ""
+
+#: includes/admin/class-settings-page.php:51
+msgid "Site Portrait"
+msgstr ""
+
+#. Author URI of the plugin
+#: ctrlweb-site-portrait.php
+msgid "https://ctrlweb.ca"
+msgstr ""
+
+#. Author of the plugin
+#: ctrlweb-site-portrait.php
+msgid "ctrlweb"
+msgstr ""
+
+#. Description of the plugin
+#: ctrlweb-site-portrait.php
+msgid "Lets any compatible service you choose securely read a technical portrait of your site to recommend suitable hosting."
+msgstr ""
+
+#. Plugin Name of the plugin
+#: ctrlweb-site-portrait.php includes/admin/class-settings-page.php:50
+#: includes/admin/class-settings-page.php:240
+msgid "ctrlweb Site Portrait"
+msgstr ""

@@ -1,0 +1,167 @@
+# Translation of Plugins - ctrlweb Site Portrait - Stable Readme (latest release) in French (Canada)
+# This file is distributed under the same license as the Plugins - ctrlweb Site Portrait - Stable Readme (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: +0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: GlotPress/4.1.0\n"
+"Language: fr_CA\n"
+"Project-Id-Version: Plugins - ctrlweb Site Portrait - Stable Readme (latest release)\n"
+
+#. Short description.
+#, gp-priority: high
+msgid "Let any compatible service you choose securely read a technical portrait of your site (versions, server, database, content) to recommend hosting."
+msgstr ""
+
+#. Plugin name.
+#, gp-priority: high
+msgid "ctrlweb Site Portrait"
+msgstr ""
+
+#. Found in faq paragraph.
+msgid "Read <code>docs/PROTOCOL.md</code>. It lists what a service must implement, with examples and test vectors."
+msgstr ""
+
+#. Found in faq paragraph.
+msgid "HTTPS is required. For local development only, define <code>SITE_PORTRAIT_DEV_MODE</code> as <code>true</code> with a <code>local</code> or <code>development</code> environment type and a <code>.test</code>, <code>.localhost</code> or loopback host."
+msgstr ""
+
+#. Found in faq paragraph.
+msgid "An application password gives a service every permission of the user who created it, and it can be reused by anyone who obtains it. This plugin gives read access to the chosen categories only, with signed, single-use requests."
+msgstr ""
+
+#. Found in faq paragraph.
+msgid "The site only stores the service's public key, which cannot be used to send requests. The site's own private key is also stored; it only allows signing answers as your site and can be replaced from the settings page (Generate a new site key) or by disconnecting."
+msgstr ""
+
+#. Found in faq paragraph.
+msgid "No. The API is read-only. The only thing a service can do besides reading is end the connection."
+msgstr ""
+
+#. Found in faq header.
+msgid "How do I build a compatible service?"
+msgstr ""
+
+#. Found in faq header.
+msgid "My site is on localhost or uses HTTP."
+msgstr ""
+
+#. Found in faq header.
+msgid "Why not use an application password?"
+msgstr ""
+
+#. Found in faq header.
+msgid "What if someone steals my database?"
+msgstr ""
+
+#. Found in faq header.
+msgid "Can the service change my site?"
+msgstr ""
+
+#. Found in description paragraph.
+msgid "The service's own terms of use and privacy policy apply to the data it receives. Their addresses are shown before you connect and on the settings page."
+msgstr ""
+
+#. Found in description paragraph.
+msgid "What is sent, to whom and when:"
+msgstr ""
+
+#. Found in description paragraph.
+msgid "This plugin connects your site to <strong>one external service chosen and entered by the site administrator</strong>. No service is built in, and the plugin never contacts any server until an administrator enters a service address and asks to look it up."
+msgstr ""
+
+#. Found in description paragraph.
+msgid "The plugin code is licensed under the GPL, version 2 or later (GPL-2.0-or-later). The protocol specification and JSON schemas in <code>docs/</code> are licensed under Creative Commons Attribution 4.0 (CC-BY-4.0), so that anyone can implement a compatible service."
+msgstr ""
+
+#. Found in description paragraph.
+msgid "The full protocol (discovery, pairing, request signatures, endpoints, errors, JSON schemas and test vectors) is in <code>docs/PROTOCOL.md</code> and <code>docs/schema/</code>. The filter <code>site_portrait_scope_data</code> lets other plugins add data to a category."
+msgstr ""
+
+#. Found in description paragraph.
+msgid "Choosing the right hosting means knowing your site: WordPress and PHP versions, plugins and themes, database size, number of posts and media files, server memory and CPU, caches in place… ctrlweb Site Portrait lets <strong>a service that you choose</strong> (typically a hosting provider or an agency) read that information securely, without giving it an administrator account."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>When the administrator clicks \"Disconnect\" or deletes the plugin:</strong> the site notifies the service that the connection ended (site address and connection identifier)."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>While connected:</strong> the service may request the portrait. The site only answers signed requests and only returns the categories you ticked (see the Description for what each contains). On a multisite network, the list of site addresses is also available to the service."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>When the administrator clicks \"Connect\" and approves on the service:</strong> the administrator's browser is sent to the service's authorization page with your site address, site name, the categories ticked and a public key. The site then sends the service, server to server, the authorization code, its public key, the addresses of its Site Portrait API endpoints, the plugin version and the categories granted."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>When the administrator clicks \"Look up service\":</strong> the site requests <code>https://&lt;service&gt;/.well-known/site-portrait</code> to display the service name, privacy policy and requested data. Only a standard HTTP request is sent (it includes your site address in the User-Agent)."
+msgstr ""
+
+#. Found in description list item.
+msgid "The service can now request the portrait. You can change the categories or disconnect at any time."
+msgstr ""
+
+#. Found in description list item.
+msgid "Click <strong>Connect</strong>: you are sent to the service to sign in and approve, then back to your dashboard."
+msgstr ""
+
+#. Found in description list item.
+msgid "The plugin reads the service description (<code>/.well-known/site-portrait</code>) and shows you its name, privacy policy and the data it asks for. Tick the categories you agree to share."
+msgstr ""
+
+#. Found in description list item.
+msgid "In <strong>Settings → Site Portrait</strong>, enter the address given by the service (for example <code>https://service.example</code>)."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>Multisite ready.</strong> On a network, a super admin connects the whole network from the Network Admin."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>Transparent.</strong> An access log shows every request (date, IP address, categories). Optional IP allow-list, rate limiting, one-click disconnection and key rotation."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>No password to leak.</strong> Instead of a password, the site and the service exchange public keys. Every request is signed (HTTP Message Signatures, RFC 9421, with Ed25519) and can only be used once. Even a copy of your database does not let anyone impersonate the service."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>Read-only and minimised.</strong> The service can never change your site. The plugin never shares passwords, keys, <code>wp-config.php</code> values, user names or email addresses, post content, file paths, the database prefix or server IP addresses."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>You choose what is shared.</strong> Seven categories (WordPress core, plugins, themes, server, database, content volumes, user counts) can be ticked or unticked at any time."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>Any compatible service.</strong> The plugin is not tied to any company, including its author. It implements Site Portrait, an open protocol documented in <code>docs/PROTOCOL.md</code> (included in the plugin), so anyone can build a compatible service."
+msgstr ""
+
+#. Found in description list item.
+msgid "<strong>Off by default.</strong> Nothing happens and nothing is sent until you enter the address of a service and approve the connection."
+msgstr ""
+
+#. Found in description header.
+msgid "External services"
+msgstr ""
+
+#. Found in description header.
+msgid "Licenses"
+msgstr ""
+
+#. Found in description header.
+msgid "For developers"
+msgstr ""
+
+#. Found in description header.
+msgid "How it works"
+msgstr ""
+
+#. Found in changelog list item.
+#, gp-priority: low
+msgid "First version: discovery, pairing with PKCE and Ed25519 keys, signed REST API, seven data categories, access log, IP allow-list, rate limiting, key rotation, multisite network mode."
+msgstr ""

@@ -31,7 +31,7 @@ npm install               # WordPress Playground CLI, ajv
 
 composer lint             # PHPCS
 composer test             # PHP unit tests
-npm test                  # Node protocol tests (test vectors)
+npm test                  # Node tests: test vectors (docs/test-vectors.json), schema, reference service
 npm run test:e2e          # Playground e2e, single site and multisite (downloads WordPress on first run)
 SP_PHP=7.4 npm run test:e2e   # same, on the minimum supported PHP version
 bin/plugin-check.sh       # Plugin Check with the WordPress.org flags, on the built plugin
@@ -43,7 +43,14 @@ bin/build-zip.sh          # build/ctrlweb-site-portrait.zip
 ```sh
 node bin/reference-client.mjs serve --port 8787            # approval page in the browser
 node bin/reference-client.mjs serve --port 8787 --auto-approve
+node bin/reference-client.mjs serve --scopes-supported laravel,packages,storage,server,database,users_counts
 ```
+
+By default the service advertises the scopes of every platform (WordPress and
+Laravel); each site only offers the ones it implements. `--scopes-supported`
+and `--scopes-requested` (comma-separated) change the discovery document; in
+code, pass `scopesSupported` / `scopesRequested` to `createService()` from
+`bin/lib/service.mjs`.
 
 On a local site, define in `wp-config.php`:
 

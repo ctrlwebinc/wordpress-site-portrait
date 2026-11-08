@@ -68,8 +68,11 @@ export function rewriteOrigin(from, to) {
   };
 }
 
-/** Starts the reference service on a free port with a fresh state directory. */
-export async function startService({ autoApprove = true } = {}) {
+/**
+ * Starts the reference service on a free port with a fresh state directory.
+ * scopesSupported / scopesRequested are passed to createService (defaults: all schema scopes).
+ */
+export async function startService({ autoApprove = true, scopesSupported, scopesRequested } = {}) {
   const probe = http.createServer();
   await new Promise((r) => probe.listen(0, '127.0.0.1', r));
   const port = probe.address().port;
@@ -78,13 +81,21 @@ export async function startService({ autoApprove = true } = {}) {
   const state = new State(fs.mkdtempSync(path.join(os.tmpdir(), 'sp-service-')));
   const logs = [];
   const url = `http://127.0.0.1:${port}`;
-  const service = createService({ state, publicUrl: url, autoApprove, log: (m) => logs.push(m) });
+  const service = createService({
+    state,
+    publicUrl: url,
+    autoApprove,
+    log: (m) => logs.push(m),
+    ...(scopesSupported !== undefined && { scopesSupported }),
+    ...(scopesRequested !== undefined && { scopesRequested }),
+  });
   await new Promise((r) => service.server.listen(port, '127.0.0.1', r));
   return {
     url,
     state,
     logs,
     confirmations: service.confirmations,
+    scopesSupported: service.scopesSupported,
     stop: () => new Promise((r) => service.server.close(r)),
   };
 }

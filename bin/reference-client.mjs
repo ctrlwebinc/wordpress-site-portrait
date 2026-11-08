@@ -4,11 +4,14 @@
 // and shows what a compatible service must implement (docs/PROTOCOL.md §13).
 //
 //   node bin/reference-client.mjs serve [--port 8787] [--public-url URL] [--auto-approve]
+//        [--scopes-supported a,b] [--scopes-requested a,b]
 //   node bin/reference-client.mjs status|portrait|sites|revoke [--pairing ID] [...]
 //   node bin/reference-client.mjs pairings | rotate-key
 //
 // Options: --state-dir DIR (default .reference-client), --scopes a,b,
 // --site-id N, --page N, --out FILE, --validate (portrait/sites, needs ajv).
+// --scopes-supported defaults to every scope of the portrait schema (all
+// platforms); --scopes-requested (pre-ticked scopes) defaults to the same list.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,8 +60,15 @@ async function main() {
   if (command === 'serve') {
     const port = Number(args.port ?? 8787);
     const publicUrl = (args['public-url'] ?? `http://127.0.0.1:${port}`).replace(/\/$/, '');
-    const { server } = createService({ state, publicUrl, autoApprove: Boolean(args['auto-approve']), log: (m) => console.log(`[service] ${m}`) });
-    server.listen(port, () => console.log(`[service] listening on ${publicUrl} (key ${state.signingKey().kid})`));
+    const { server, scopesSupported } = createService({
+      state,
+      publicUrl,
+      autoApprove: Boolean(args['auto-approve']),
+      log: (m) => console.log(`[service] ${m}`),
+      ...(typeof args['scopes-supported'] === 'string' && { scopesSupported: args['scopes-supported'] }),
+      ...(typeof args['scopes-requested'] === 'string' && { scopesRequested: args['scopes-requested'] }),
+    });
+    server.listen(port, () => console.log(`[service] listening on ${publicUrl} (key ${state.signingKey().kid}, scopes ${scopesSupported.join(',')})`));
     return;
   }
 

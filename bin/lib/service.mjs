@@ -6,17 +6,46 @@ import http from 'node:http';
 import { randomToken, pkceChallenge, thumbprint, publicKeyFromJwk, verifyRequest, SignatureError } from './protocol.mjs';
 import { signedFetch } from './client.mjs';
 
-const SCOPES = ['core', 'plugins', 'themes', 'server', 'database', 'content', 'users_counts'];
+/**
+ * Scopes advertised by default: every scope defined by the portrait schema,
+ * for all platforms (PROTOCOL.md §7). Sites ignore the ones they do not implement.
+ */
+export const DEFAULT_SCOPES = Object.freeze(['core', 'plugins', 'themes', 'server', 'database', 'content', 'users_counts', 'laravel', 'packages', 'storage']);
+const SCOPE_NAME = /^[a-z][a-z0-9_]{1,31}$/;
 const CODE_TTL_MS = 10 * 60 * 1000;
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const origin = (u) => new URL(u).origin;
 
 /**
- * Creates the HTTP server.
- * options: { state, publicUrl, autoApprove, name, log }
+ * Normalises a scope list given as an array or a comma/space-separated string.
+ * Throws on an empty list or an invalid scope name.
  */
-export function createService({ state, publicUrl, autoApprove = false, name = 'Site Portrait reference service', log = () => {} }) {
+export function parseScopes(value) {
+  const list = Array.isArray(value) ? value : String(value).split(/[\s,]+/);
+  const scopes = [...new Set(list.map((s) => String(s).trim()).filter(Boolean))];
+  if (!scopes.length) throw new Error('The scope list is empty.');
+  const bad = scopes.find((s) => !SCOPE_NAME.test(s));
+  if (bad) throw new Error(`Invalid scope name: ${bad}`);
+  return scopes;
+}
+
+/**
+ * Creates the HTTP server.
+ * options: { state, publicUrl, autoApprove, name, log, scopesSupported, scopesRequested }
+ * scopesSupported defaults to DEFAULT_SCOPES; scopesRequested to scopesSupported.
+ */
+export function createService({
+  state,
+  publicUrl,
+  autoApprove = false,
+  name = 'Site Portrait reference service',
+  log = () => {},
+  scopesSupported = DEFAULT_SCOPES,
+  scopesRequested,
+}) {
+  const SCOPES = parseScopes(scopesSupported);
+  const REQUESTED = scopesRequested === undefined ? SCOPES : parseScopes(scopesRequested).filter((s) => SCOPES.includes(s));
   const codes = new Map();
   const confirmations = new Map();
 
@@ -33,7 +62,7 @@ export function createService({ state, publicUrl, autoApprove = false, name = 'S
     token_endpoint: `${publicUrl}/token`,
     revocation_endpoint: `${publicUrl}/revoke`,
     scopes_supported: SCOPES,
-    scopes_requested: SCOPES,
+    scopes_requested: REQUESTED,
     scope_reasons: { database: 'Database size drives storage and memory sizing.' },
     jwks: state.jwks(),
   });
@@ -143,6 +172,9 @@ export function createService({ state, publicUrl, autoApprove = false, name = 'S
       pairing_id: crypto.randomUUID(),
       client_id: authz.client_id,
       mode: data.mode === 'network' ? 'network' : 'single',
+      // Absent platform means WordPress (PROTOCOL.md §4.4, schema 1.1.0).
+      platform: data.platform && typeof data.platform === 'object' && typeof data.platform.name === 'string' ? data.platform : { name: 'wordpress', version: null },
+      implementation_version: typeof data.plugin_version === 'string' ? data.plugin_version : null,
       site_jwks: [{ kty: 'OKP', crv: 'Ed25519', x: data.site_jwk.x, kid: thumbprint(data.site_jwk.x) }],
       endpoints,
       scopes,
@@ -227,5 +259,5 @@ export function createService({ state, publicUrl, autoApprove = false, name = 'S
     }
   });
 
-  return { server, confirmations };
+  return { server, confirmations, scopesSupported: SCOPES };
 }

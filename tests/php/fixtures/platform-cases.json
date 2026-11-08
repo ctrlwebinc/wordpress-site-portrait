@@ -1,0 +1,75 @@
+{
+  "$comment": "Facts as returned by Platform_Detector::gather() (package lists already filtered to signature packages, except where a case checks that other names are ignored) and the expected distribution members.",
+  "classic": {
+    "facts": { "root": null, "packages": {}, "classes": { "wp_config": false, "acorn": false }, "wp_env": false, "layout": { "core_dir": "html", "content_dir": "wp-content", "docroot": "www", "siblings": false }, "acorn_root_boot": null },
+    "expected": { "distribution": null, "distribution_version": null, "composer_managed": false, "acorn": null }
+  },
+  "classic, plugin shipping its own Composer autoloader": {
+    "facts": { "root": { "name": "acme/some-plugin", "version": "2.1.0" }, "packages": {}, "classes": { "wp_config": false, "acorn": false }, "wp_env": false, "layout": { "core_dir": "public_html", "content_dir": "wp-content", "docroot": "example", "siblings": false } },
+    "expected": { "distribution": null, "distribution_version": null, "composer_managed": false, "acorn": null }
+  },
+  "classic with a Sage theme (Acorn booted in the theme)": {
+    "facts": { "root": { "name": "roots/sage", "version": "dev-main" }, "packages": { "roots/acorn": "v4.3.1" }, "classes": { "wp_config": false, "acorn": true }, "wp_env": false, "layout": { "core_dir": "html", "content_dir": "wp-content", "docroot": "www", "siblings": false }, "acorn_root_boot": false },
+    "expected": { "distribution": null, "distribution_version": null, "composer_managed": false, "acorn": "v4.3.1" }
+  },
+  "empty facts": {
+    "facts": {},
+    "expected": { "distribution": null, "distribution_version": null, "composer_managed": false, "acorn": null }
+  },
+  "bedrock": {
+    "facts": { "root": { "name": "roots/bedrock", "version": "1.24.0" }, "packages": { "roots/wordpress": "6.8.3", "roots/wordpress-no-content": "6.8.3", "roots/wp-config": "1.0.0" }, "classes": { "wp_config": true, "acorn": false }, "wp_env": true, "layout": { "core_dir": "wp", "content_dir": "app", "docroot": "web", "siblings": true }, "acorn_root_boot": null },
+    "expected": { "distribution": "bedrock", "distribution_version": "1.24.0", "composer_managed": true, "acorn": null }
+  },
+  "bedrock with a renamed root package": {
+    "facts": { "root": { "name": "acme/bakery-site", "version": "dev-main" }, "packages": { "roots/wordpress": "6.8.3", "roots/wp-config": "1.0.0" }, "classes": { "wp_config": true, "acorn": false }, "wp_env": true, "layout": { "core_dir": "wp", "content_dir": "app", "docroot": "web", "siblings": true } },
+    "expected": { "distribution": "bedrock", "distribution_version": null, "composer_managed": true, "acorn": null }
+  },
+  "bedrock recognised by its layout only (Composer runtime API not loaded)": {
+    "facts": { "root": null, "packages": {}, "classes": { "wp_config": false, "acorn": false }, "wp_env": false, "layout": { "core_dir": "wp", "content_dir": "app", "docroot": "web", "siblings": true } },
+    "expected": { "distribution": "bedrock", "distribution_version": null, "composer_managed": true, "acorn": null }
+  },
+  "bedrock with a Sage theme": {
+    "facts": { "root": { "name": "roots/bedrock", "version": "1.24.0" }, "packages": { "roots/wordpress": "6.8.3", "roots/wp-config": "1.0.0", "roots/acorn": "v5.0.1" }, "classes": { "wp_config": true, "acorn": true }, "wp_env": true, "layout": { "core_dir": "wp", "content_dir": "app", "docroot": "web", "siblings": true }, "acorn_root_boot": false },
+    "expected": { "distribution": "bedrock", "distribution_version": "1.24.0", "composer_managed": true, "acorn": "v5.0.1" }
+  },
+  "radicle (Acorn booted at the project root)": {
+    "facts": { "root": { "name": "acme/bakery", "version": "dev-main" }, "packages": { "roots/wordpress": "6.8.3", "roots/wp-config": "1.0.0", "roots/acorn": "v5.0.1" }, "classes": { "wp_config": true, "acorn": true }, "wp_env": true, "layout": { "core_dir": "wp", "content_dir": "content", "docroot": "public", "siblings": true }, "acorn_root_boot": true },
+    "expected": { "distribution": "radicle", "distribution_version": null, "composer_managed": true, "acorn": "v5.0.1" }
+  },
+  "radicle before Acorn boots (layout public/wp + public/content)": {
+    "facts": { "root": { "name": "roots/radicle", "version": "1.2.0" }, "packages": { "roots/wordpress": "6.8.3", "roots/wp-config": "1.0.0", "roots/acorn": "v5.0.1" }, "classes": { "wp_config": true, "acorn": true }, "wp_env": true, "layout": { "core_dir": "wp", "content_dir": "content", "docroot": "public", "siblings": true }, "acorn_root_boot": null },
+    "expected": { "distribution": "radicle", "distribution_version": "1.2.0", "composer_managed": true, "acorn": "v5.0.1" }
+  },
+  "wordplate": {
+    "facts": { "root": { "name": "vinkla/wordplate", "version": "12.1.0" }, "packages": { "roots/wordpress": "6.8.3" }, "classes": { "wp_config": false, "acorn": false }, "wp_env": false, "layout": { "core_dir": "wordpress", "content_dir": "public", "docroot": "public", "siblings": false } },
+    "expected": { "distribution": "wordplate", "distribution_version": "12.1.0", "composer_managed": true, "acorn": null }
+  },
+  "wordplate, older versions (wordplate/framework)": {
+    "facts": { "root": { "name": "acme/site", "version": "dev-main" }, "packages": { "johnpbloch/wordpress": "5.9.3", "wordplate/framework": "9.1.0" }, "layout": { "core_dir": "wordpress", "content_dir": "public", "docroot": "public", "siblings": false } },
+    "expected": { "distribution": "wordplate", "distribution_version": "9.1.0", "composer_managed": true, "acorn": null }
+  },
+  "wordplate recognised by its layout with a Composer core": {
+    "facts": { "root": { "name": "acme/site", "version": "dev-main" }, "packages": { "roots/wordpress": "6.8.3" }, "layout": { "core_dir": "wordpress", "content_dir": "public", "docroot": "public", "siblings": false } },
+    "expected": { "distribution": "wordplate", "distribution_version": null, "composer_managed": true, "acorn": null }
+  },
+  "wp starter": {
+    "facts": { "root": { "name": "acme/site", "version": "dev-main" }, "packages": { "roots/wordpress": "6.8.3", "wecodemore/wpstarter": "v3.0.0" }, "layout": { "core_dir": "wp", "content_dir": "wp-content", "docroot": "public", "siblings": true } },
+    "expected": { "distribution": "wpstarter", "distribution_version": "v3.0.0", "composer_managed": true, "acorn": null }
+  },
+  "unrelated wpstarter/* package is not WP Starter": {
+    "facts": { "root": { "name": "acme/site", "version": "dev-main" }, "packages": { "johnpbloch/wordpress-core": "6.8.3", "wpstarter/wpstarter": "1.0.0" }, "layout": { "core_dir": "wordpress", "content_dir": "wp-content", "docroot": "web", "siblings": true } },
+    "expected": { "distribution": "composer", "distribution_version": null, "composer_managed": true, "acorn": null }
+  },
+  "core installed by Composer, no known distribution": {
+    "facts": { "root": { "name": "acme/site", "version": "dev-main" }, "packages": { "johnpbloch/wordpress-core": "6.8.3" }, "layout": { "core_dir": "wordpress", "content_dir": "wp-content", "docroot": "web", "siblings": true } },
+    "expected": { "distribution": "composer", "distribution_version": null, "composer_managed": true, "acorn": null }
+  },
+  "official wordpress/core-* package": {
+    "facts": { "root": { "name": "acme/site", "version": "dev-main" }, "packages": { "wordpress/core-implementation": "6.8.3" } },
+    "expected": { "distribution": "composer", "distribution_version": null, "composer_managed": true, "acorn": null }
+  },
+  "WP_ENV alone does not make a Bedrock site": {
+    "facts": { "root": null, "packages": {}, "wp_env": true, "layout": { "core_dir": "html", "content_dir": "wp-content", "docroot": "www", "siblings": false } },
+    "expected": { "distribution": null, "distribution_version": null, "composer_managed": false, "acorn": null }
+  }
+}

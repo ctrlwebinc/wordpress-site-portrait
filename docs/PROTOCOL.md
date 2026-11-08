@@ -1,23 +1,30 @@
 # Site Portrait Protocol — version 1
 
-Status: **draft** (protocol version `1`, portrait schema `1.0.0`)
+Status: **draft** (protocol version `1`, portrait schema `1.1.0`)
 
-License: this specification and the JSON schemas in `docs/schema/` are licensed
-under [Creative Commons Attribution 4.0 International](LICENSE) (CC-BY-4.0).
+License: this specification, the JSON schemas in `docs/schema/` and the test
+vectors in `docs/test-vectors.json` are licensed under
+[Creative Commons Attribution 4.0 International](LICENSE) (CC-BY-4.0).
 The reference client in `bin/` is licensed under the Apache License 2.0, and the
 WordPress plugin under the GPL, version 2 or later.
 
-This document specifies how a WordPress site running a Site Portrait plugin
-(the reference implementation is *ctrlweb Site Portrait*, slug
-`ctrlweb-site-portrait`)
-and an external service chosen by the site administrator ("the service") pair
-with each other, and how the service then retrieves a read-only, privacy-minimised
-technical portrait of the site (software versions, server capacity, database
-size, content volumes…), typically to recommend suitable hosting.
+This document specifies how a website running a **site-side implementation**
+of Site Portrait and an external service chosen by the site administrator
+("the service") pair with each other, and how the service then retrieves a
+read-only, privacy-minimised technical portrait of the site (software versions,
+server capacity, database size, content volumes…), typically to recommend
+suitable hosting.
 
-The plugin is **not tied to any particular service**. Anyone may implement a
-compatible service by following this document. The key words MUST, MUST NOT,
-SHOULD, SHOULD NOT and MAY are to be interpreted as described in RFC 2119.
+The protocol is platform-independent. The **reference implementation** is the
+WordPress plugin *ctrlweb Site Portrait* (slug `ctrlweb-site-portrait`); this
+document uses it for examples (WordPress functions, `wp-admin` URLs, REST
+paths under `/wp-json/`) and marks them as such. Other platforms, such as
+Laravel, implement the same protocol with their own scopes (§2.2, §7).
+
+Implementations are **not tied to any particular service**. Anyone may
+implement a compatible service by following this document. The key words MUST,
+MUST NOT, SHOULD, SHOULD NOT and MAY are to be interpreted as described in
+RFC 2119.
 
 ---
 
@@ -45,15 +52,15 @@ SHOULD, SHOULD NOT and MAY are to be interpreted as described in RFC 2119.
 ## 1. Overview
 
 ```
- Admin's browser            WordPress site (plugin)                Service
- ───────────────            ───────────────────────                ───────
+ Admin's browser            Site (implementation)                  Service
+ ───────────────            ─────────────────────                  ───────
  1. enters service URL ───▶ GET {service}/.well-known/site-portrait ──▶
                        ◀─── shows name, privacy policy, scopes
  2. ticks scopes, confirms
                             generates site key pair, state, PKCE
  3. ◀── 302 to authorize_endpoint ───────────────────────────────────────▶
         (admin logs in at the service and approves)
- 4. ◀── 302 back to wp-admin callback with code + state ─────────────────
+ 4. ◀── 302 back to the site's admin callback with code + state ─────────
                             POST token_endpoint (code, code_verifier,
                             site public key), signed with site key ───▶
                        ◀─── pairing_id + service public keys (pinned)
@@ -65,16 +72,17 @@ SHOULD, SHOULD NOT and MAY are to be interpreted as described in RFC 2119.
 
 Properties:
 
-* **Opt-in.** The plugin makes no outbound request until an administrator types
-  a service URL and asks to connect. It is disabled by default.
+* **Opt-in.** The implementation makes no outbound request until an
+  administrator types a service URL and asks to connect. It is disabled by
+  default.
 * **No shared secret.** Both parties hold their own Ed25519 private key and only
   know the other's public key. A leak of the site database does not let anyone
   impersonate the service, and a leak of the service database does not grant
   administrator access to the site (at worst, read access to the scopes the
   administrator granted).
 * **Read-only.** The data endpoints never modify the site. The only state they
-  touch is the plugin's own bookkeeping (replay nonces, access log, and the
-  pairing itself on revocation).
+  touch is the implementation's own bookkeeping (replay nonces, access log,
+  and the pairing itself on revocation).
 * **Scoped and minimised.** The administrator chooses which data categories may
   be read and can change that choice at any time. No secrets, e-mail addresses,
   user names, content bodies or absolute file-system paths are ever returned.
@@ -96,13 +104,15 @@ Properties:
 
 ### 2.1 Deployment modes
 
-A WordPress installation pairs with **at most one service** at a time, in one
-of two modes:
+A site installation pairs with **at most one service** at a time, in one of two
+modes. `single` is the general case and the only mode of platforms without a
+notion of site networks. `network` is currently defined for WordPress multisite
+only:
 
 | Mode | When | Who pairs | Settings live in | Portrait covers |
 |---|---|---|---|---|
-| `single` | Regular (non-multisite) installation. | A user with `manage_options`. | Site options. | The site. |
-| `network` | Multisite installation, plugin **network-activated**. | A super admin (`manage_network_options`), from the Network Admin. | Network options (`sitemeta`). | The whole network; per-site details on demand (§6.3, §6.5). |
+| `single` | Any platform; on WordPress, a regular (non-multisite) installation. | A site administrator (on WordPress, a user with `manage_options`). | The implementation's own storage (on WordPress, site options). | The site. |
+| `network` | WordPress multisite installation, plugin **network-activated**. | A super admin (`manage_network_options`), from the Network Admin. | Network options (`sitemeta`). | The whole network; per-site details on demand (§6.3, §6.5). |
 
 On a multisite installation where the plugin is activated on individual sites
 only, the plugin offers no pairing and registers no routes: a subsite
@@ -113,10 +123,59 @@ the plugin instead.
 In `network` mode the REST routes are served by the **main site** of the
 network only; `@authority` (§5.1) is compared with the main site's host.
 
+### 2.2 Platforms and implementations
+
+The **platform** is the software the site runs on; the **implementation** is
+the component that speaks this protocol on the site (a WordPress plugin, a
+Laravel package…). Since portrait schema 1.1.0 the site states its platform in
+the token request (§4.4), in `/status` (§6.2) and in the portrait (§8.1):
+
+```json
+"platform": { "name": "wordpress", "version": "6.8.3", "distribution": "bedrock", "distribution_version": "1.24.0", "composer_managed": true, "acorn": null }
+"platform": { "name": "laravel", "version": "12.30.1" }
+```
+
+| Member | Description |
+|---|---|
+| `name` | Lower-case identifier matching `^[a-z][a-z0-9_-]{0,31}$`. Defined values: `wordpress`, `laravel`. Services MUST accept other values. |
+| `version` | Version of the platform (WordPress version, Laravel framework version), or `null` if unknown. |
+| `distribution` | WordPress only, optional. Composer-based distribution: `bedrock`, `radicle`, `wordplate`, `wpstarter`, `composer` (core installed by Composer without a recognised distribution), or `null` (classic install). Services MUST ignore unknown values; more may be defined later. |
+| `distribution_version` | WordPress only, optional. Version of the distribution's package when known, else `null`. |
+| `composer_managed` | WordPress only, optional. Boolean: the WordPress core is installed by Composer. |
+| `acorn` | WordPress only, optional. Installed version of `roots/acorn` (Laravel components for WordPress, used by Sage and Radicle), else `null`. |
+
+Every WordPress variant keeps `name: "wordpress"`: a distribution changes
+neither the available scopes nor how the site is hosted. The distribution
+members are **best effort**: they come from heuristics and may be wrong or
+`null` on customised installations, so services MUST NOT rely on them for
+anything critical. The reference plugin uses, without reading `.env` files,
+making network requests or exposing any path:
+
+| Value | Signatures |
+|---|---|
+| `bedrock` | Class `Roots\WPConfig\Config` or package `roots/wp-config`; root package `roots/bedrock` (often renamed, which leaves `distribution_version` `null`); core and content directories named `wp` and `app`, side by side in `web`; `WP_ENV` together with a Composer-installed core. |
+| `radicle` | Bedrock signatures (or `WP_ENV`) plus Acorn, booted with the project root as base path instead of a theme, or the `public/wp` + `public/content` layout. Radicle is commercial and not on Packagist: medium reliability. |
+| `wordplate` | Root package `vinkla/wordplate`, or package `wordplate/framework` (older versions), or a Composer-installed core in `public/wordpress`. |
+| `wpstarter` | Package `wecodemore/wpstarter`. (Packages under `wpstarter/*` on Packagist are an unrelated project.) |
+| `composer` | Core package `roots/wordpress*`, `johnpbloch/wordpress*` or `wordpress/core-*`, without another signature. |
+
+Composer data comes from `Composer\InstalledVersions` when that class is
+loaded; layout checks only compare directory names and the relationship
+between `ABSPATH` and `WP_CONTENT_DIR`.
+
+A message **without** `platform` comes from a WordPress implementation (the
+only platform before schema 1.1.0). `plugin_version` (token request,
+`/status`) and `plugin.version` (portrait) are the version of the
+**implementation**, not of the platform; the names are kept for compatibility.
+
+The platform determines which scopes a site can offer (§7). Everything else in
+this document (discovery, pairing, signatures, endpoints, errors, revocation,
+key rotation) is identical on every platform.
+
 ## 3. Discovery
 
 The administrator enters the **service base URL** (for example
-`https://service.example`). The plugin normalises it to its origin
+`https://service.example`). The site normalises it to its origin
 (scheme + host + optional port) and fetches:
 
 ```
@@ -132,8 +191,8 @@ Rules for the site:
   [`schema/discovery-v1.schema.json`](schema/discovery-v1.schema.json).
 * All endpoint URLs in the document MUST be `https` and MUST share the origin
   of the discovery URL.
-* The request uses `wp_safe_remote_get()` (rejects private/reserved IP ranges)
-  except in development mode.
+* The request rejects private and reserved IP ranges (on WordPress,
+  `wp_safe_remote_get()`) except in development mode.
 
 ### 3.1 Discovery document
 
@@ -182,27 +241,31 @@ Rules for the site:
 | `authorization_endpoint` | yes | Browser endpoint (§4.2). |
 | `token_endpoint` | yes | Server-to-server code exchange (§4.4). |
 | `revocation_endpoint` | yes | Receives revocation notices from sites (§10.1). |
-| `scopes_supported` | yes | Scopes the service understands. |
+| `scopes_supported` | yes | Scopes the service understands. May list scopes of several platforms; each site only offers the ones it implements and ignores the others (§7). |
 | `scopes_requested` | no | Scopes pre-ticked in the consent screen (default: all supported). |
 | `scope_reasons` | no | Map scope → short plain-text justification shown next to the checkbox. |
 | `jwks.keys` | yes | The service's current Ed25519 signing keys. `kid` MUST equal the RFC 7638 thumbprint. May carry `endorsements` (§11). |
 
-The plugin escapes every displayed string; services MUST NOT expect HTML to be
+The site escapes every displayed string; services MUST NOT expect HTML to be
 rendered.
 
 ## 4. Pairing
 
 Pairing is OAuth 2.0 "authorization code" (RFC 6749 §4.1) with PKCE S256
-(RFC 7636), where the WordPress site is the client and is not pre-registered.
+(RFC 7636), where the site is the client and is not pre-registered.
 Its output is not a bearer token but a **mutual exchange of public keys**.
 
 ### 4.1 Consent screen (site)
 
-After discovery the plugin displays: service name, origin, description, privacy
-policy and terms links, and one checkbox per scope (pre-ticked from
-`scopes_requested`, with `scope_reasons`). Nothing is sent to the service until
-the administrator (capability `manage_options`) submits this form, which is
-protected by a WordPress nonce.
+After discovery the site displays: service name, origin, description, privacy
+policy and terms links, and one checkbox per scope it implements (pre-ticked
+from `scopes_requested`, with `scope_reasons`). Nothing is sent to the service
+until a site administrator submits this form, which MUST be protected against
+CSRF. On WordPress, the administrator needs the capability `manage_options`
+and the form carries a WordPress nonce. Implementations without a web admin
+interface MAY run the consent step from the command line, as long as the
+administrator sees the same information and the browser steps of §4.2–4.3 are
+completed by an authenticated administrator.
 
 On submission the site:
 
@@ -232,13 +295,13 @@ GET {authorization_endpoint}
 
 | Parameter | Description |
 |---|---|
-| `client_id` | The site's `home_url()` origin (scheme + host + port). |
-| `redirect_uri` | wp-admin callback. **Must be returned to exactly as given** (it embeds a WordPress nonce). Its origin is the site's admin origin. |
+| `client_id` | Origin (scheme + host + port) of the site's public URL (`home_url()` on WordPress). |
+| `redirect_uri` | The implementation's admin callback (on WordPress, `wp-admin/admin-post.php?action=site_portrait_callback&_wpnonce=…`). **Must be returned to exactly as given**: it may embed an anti-CSRF token such as a WordPress nonce. Its host is the site's host. |
 | `state` | Opaque; must be echoed back unchanged. |
 | `code_challenge`, `code_challenge_method` | PKCE, method is always `S256`. |
 | `scope` | Space-separated list of scopes granted by the administrator. |
 | `site_key_thumbprint` | `kid` of the site key that will be presented at the token endpoint. |
-| `site_name` | Informational (blog name), plain text. |
+| `site_name` | Informational (site or application name), plain text. |
 | `protocol_version` | `1`. |
 
 The service authenticates the user by its own means, displays at least the
@@ -266,11 +329,13 @@ Requirements on the service:
 * `code` MUST be bound to `client_id`, `redirect_uri`, `code_challenge`,
   `site_key_thumbprint` and the approved scopes.
 
-Requirements on the site (callback `admin-post.php?action=site_portrait_callback`):
+Requirements on the site (on WordPress, callback
+`admin-post.php?action=site_portrait_callback`):
 
-* Verify the WordPress nonce, that the current user has `manage_options`, that
-  a pending pairing exists **for this user**, and that `state` matches it
-  (constant-time comparison). Any failure discards the pending pairing.
+* Verify the anti-CSRF token (WordPress nonce), that the current user is a site
+  administrator (`manage_options`), that a pending pairing exists **for this
+  user**, and that `state` matches it (constant-time comparison). Any failure
+  discards the pending pairing.
 
 ### 4.4 Code exchange (site → service, server-to-server)
 
@@ -295,17 +360,27 @@ Signature: sp=:…:
   },
   "mode": "single",
   "scopes": ["core", "plugins", "themes", "server"],
+  "platform": { "name": "wordpress", "version": "6.8.3" },
   "plugin_version": "1.0.0",
   "protocol_version": "1"
 }
 ```
 
+| Member | Description |
+|---|---|
+| `mode` | `single` or `network` (§2.1). |
+| `scopes` | Scopes granted by the administrator. |
+| `platform` | Platform of the site (§2.2). Optional; absent means `wordpress`. |
+| `plugin_version` | Version of the site-side implementation (not of the platform). |
+| `protocol_version` | `"1"`. |
+
 The request is signed (§5) with the **site key**. This is a proof of
 possession: the service verifies the signature with `site_jwk` from the body.
 
-`endpoints` are absolute URLs built with `rest_url()`; they may use the
-`?rest_route=` form on sites without pretty permalinks. Services MUST use them
-as given and never build REST URLs themselves. In `network` mode (§2.1),
+`endpoints` are absolute URLs chosen by the implementation. On WordPress they
+are built with `rest_url()` and may use the `?rest_route=` form on sites
+without pretty permalinks; other implementations may use any path. Services
+MUST use them as given and never build URLs themselves. In `network` mode (§2.1),
 `mode` is `"network"`, `client_id` is the main site's origin, the
 `redirect_uri` points to the Network Admin
 (`/wp-admin/network/edit.php?action=site_portrait_callback&_wpnonce=…`), and
@@ -354,7 +429,7 @@ request and check that:
 * the response signature verifies with the `site_jwk` received at §4.4, and
 * the returned `pairing_id` equals the one it issued.
 
-This proves that the WordPress installation actually reachable at `client_id`
+This proves that the site installation actually reachable at `client_id`
 holds the pairing. If confirmation fails within 15 minutes the service SHOULD
 discard the pairing.
 
@@ -395,8 +470,9 @@ Component values follow RFC 9421 §2.2:
 
 Receivers rebuild the signature base from the request line they actually
 received (on WordPress: `$_SERVER['REQUEST_URI']` and the `Host` header), and
-compare `@authority` against the host of `home_url()`. Reverse proxies that
-rewrite the path or host break verification by design.
+compare `@authority` against the host of the site's configured public URL
+(`home_url()` on WordPress), never against the received `Host` header alone.
+Reverse proxies that rewrite the path or host break verification by design.
 
 Additional members in `Signature-Input` / `Signature` with other labels are
 ignored. A request with no `sp` signature is rejected.
@@ -443,10 +519,17 @@ window.
 
 ## 6. Site REST endpoints
 
-Namespace: `site-portrait/v1`. The routes are **only registered while an active
-pairing exists**; otherwise the API answers with WordPress' standard 404
-`rest_no_route`. All routes require a valid request signature from a pinned
-service key; WordPress cookie or application-password authentication is
+This section names the endpoints after the WordPress REST namespace
+`site-portrait/v1` (URLs such as `/wp-json/site-portrait/v1/status`). Other
+implementations may serve them at other paths: services only use the URLs
+received in `endpoints` (§4.4). The behaviour of each endpoint is the same on
+every platform.
+
+The endpoints **only answer while an active pairing exists**; otherwise they
+return 404 (on WordPress the routes are not registered and the API answers
+with its standard `rest_no_route`). All endpoints require a valid request
+signature from a pinned service key; the platform's own authentication
+(WordPress cookies or application passwords, Laravel sessions or tokens…) is
 ignored and never sufficient.
 
 ### 6.1 Common response headers
@@ -465,6 +548,7 @@ Cheap health/identity check; used for confirmation (§4.5) and key discovery.
 ```json
 {
   "protocol_version": "1",
+  "platform": { "name": "wordpress", "version": "6.8.3" },
   "plugin_version": "1.0.0",
   "pairing_id": "c0a7d0e2-4f0f-4d8b-9a59-1d3c0f6a7b11",
   "mode": "single",
@@ -483,8 +567,11 @@ Cheap health/identity check; used for confirmation (§4.5) and key discovery.
 ```
 
 `scopes_granted` is authoritative: the administrator can change it at any time
-in wp-admin without re-pairing. Services SHOULD call `/status` before each
-portrait retrieval rather than caching scopes.
+in the site's administration without re-pairing. Services SHOULD call
+`/status` before each portrait retrieval rather than caching scopes.
+`scopes_available` lists the scopes this implementation offers (§7).
+`platform` (§2.2) is optional; absent means `wordpress`. `plugin_version` is
+the version of the implementation.
 
 ### 6.3 `GET /site-portrait/v1/portrait`
 
@@ -507,7 +594,8 @@ remain network-wide. An unknown, archived, spam or deleted site →
 `404 site_portrait_unknown_site`. `site_id` in `single` mode →
 `400 site_portrait_invalid_param`.
 
-* An unknown scope name → `400 site_portrait_invalid_scope`.
+* An unknown scope name (including a scope of another platform) →
+  `400 site_portrait_invalid_scope`.
 * A known but not-granted scope is **omitted**, listed in `scopes_denied`, and
   the request still succeeds (so that narrowing scopes on the site does not
   break the service).
@@ -537,7 +625,7 @@ Service-initiated revocation (e.g. the customer closed their account). Body:
 The site verifies the signature and `pairing_id`, deletes the pairing (pinned
 keys, site key pair, nonces) and answers `200 {"revoked": true}` signed with the
 site key that was just discarded. This is the only request that changes state,
-and it only removes the plugin's own pairing data.
+and it only removes the implementation's own pairing data.
 
 ### 6.5 `GET /site-portrait/v1/sites` (`network` mode only)
 
@@ -572,18 +660,44 @@ consent screen states it explicitly in `network` mode.
 
 ## 7. Scopes
 
+Scopes depend on the platform (§2.2). A site offers only the scopes its
+implementation provides: it lists them in `/status` `scopes_available`, shows
+only those on the consent screen, and **ignores** the other scopes found in the
+discovery document (`scopes_supported`, `scopes_requested`, `scope_reasons`).
+A service may therefore publish the scopes of every platform it supports in a
+single discovery document. The normative content of each scope is its
+definition in the portrait schema (§8).
+
+**Common scopes** (every platform; same schema everywhere):
+
+| Scope | Contents (summary) | Notes |
+|---|---|---|
+| `server` | OS family, architecture, web server software, PHP version/SAPI/extensions/ini limits, OPcache, CPU count, memory, disk free/total on the volume holding the site's writable data (wp-content, Laravel `storage`), image libraries, cURL/OpenSSL versions. | No hostnames, no IPs, no paths. |
+| `database` | Engine and version, charset/collation, total size, table count, size of the largest tables (prefix stripped), selected server variables. On WordPress also options and autoloaded-options size/count, transient count, tables of the site (`options`, `transients_count`, `tables.site_count` are `null` on other platforms). | No credentials, no table prefix, no host, no database name. |
+| `users_counts` | Number of users in total and per role (`none` for users without a role, or for every user on platforms without roles). | Counts only; never logins, names or e-mail addresses. |
+
+**WordPress scopes:**
+
 | Scope | Contents (summary) | Notes |
 |---|---|---|
 | `core` | WordPress version and update status, locale and installed languages, multisite summary, environment type, HTTPS status, permalink type, debug flags (booleans), cron health, object/page cache detection, auto-update settings. | |
 | `plugins` | Installed plugins (slug, name, version, active / network-active, auto-update, available update), must-use plugins, drop-ins (file names only). | |
 | `themes` | Active theme and parent, installed themes (slug, name, version, block/classic, available update). | |
-| `server` | OS family, architecture, web server software, PHP version/SAPI/extensions/ini limits, OPcache, CPU count, memory, disk free/total on the wp-content volume, image libraries, cURL/OpenSSL versions. | No hostnames, no IPs, no paths. |
-| `database` | Engine and version, charset/collation, total size, table count, size of the largest tables (prefix stripped), options and autoloaded-options size/count, transient count. | No credentials, no table prefix, no host. |
 | `content` | Counts per post type and status, revisions, attachments by MIME family, taxonomies and term counts, comments by status, size of uploads / wp-content / plugins / themes directories. | Counts and sizes only, never content. |
-| `users_counts` | Number of users in total and per role. | Counts only; never logins, names or e-mail addresses. |
 
-Scope names match `^[a-z][a-z0-9_]{1,31}$`. Future versions may add scopes;
-services MUST ignore unknown scopes in `scopes_available`.
+**Laravel scopes** (schema 1.1.0):
+
+| Scope | Contents (summary) | Notes |
+|---|---|---|
+| `laravel` | Framework version, environment type, debug and maintenance flags, timezone, locale, HTTPS, optimisation caches (config, routes, events), driver names (cache, session, queue, mail, broadcasting, filesystems, log), Octane, detected ecosystem packages (Horizon, Livewire…), queue counters (pending, failed, batches), scheduled task counts per frequency, route and Artisan command counts. | Driver names only; never connection settings, queue or channel names, route URIs or scheduled commands. |
+| `packages` | Installed Composer packages (name, version, type, direct, dev), counts, platform requirements of the root package (PHP constraint, extensions). | Never repository or dist URLs. Packages hidden by the administrator are omitted from the list but counted. |
+| `storage` | Sizes of `storage/app`, `storage/app/public`, `storage/logs`, `storage/framework/{cache,sessions,views}`, `public`, `vendor`, `node_modules`; optionally file counts of `storage/app`, `storage/app/public` and `public` (`files`, same walk, budget and cache as the sizes, so that a service can fall back on them when a size is `null`); configured disks (name, driver, default, size of local disks). | Sizes and counts only; symbolic links are not followed; remote disks are never listed (`size` is `null`). |
+
+All sizes are integers in bytes, or `null`; unknown values are `null`.
+
+Scope names match `^[a-z][a-z0-9_]{1,31}$`. Future versions may add scopes and
+platforms; services MUST ignore unknown scopes in `scopes_available`, and sites
+MUST ignore unknown scopes in the discovery document.
 
 ## 8. The portrait document
 
@@ -595,7 +709,7 @@ The normative definition is the JSON Schema
 
 ```json
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "protocol_version": "1",
   "generated_at": "2026-10-19T14:00:00Z",
   "generation_time_ms": 412,
@@ -603,6 +717,7 @@ The normative definition is the JSON Schema
   "mode": "single",
   "site_id": null,
   "site": { "home_url": "https://example.com", "site_url": "https://example.com", "name": "My Bakery" },
+  "platform": { "name": "wordpress", "version": "6.8.3" },
   "plugin": { "version": "1.0.0" },
   "scopes_returned": ["core", "plugins"],
   "scopes_denied": [],
@@ -616,8 +731,15 @@ The normative definition is the JSON Schema
 }
 ```
 
-* `schema_version` follows SemVer. Minor versions only **add** optional members;
-  a major version bump means a new protocol version.
+* `schema_version` follows SemVer. Minor versions only **add** optional members
+  or values; a major version bump means a new protocol version. Receivers MUST
+  accept any `1.x.y` document.
+* `platform` (§2.2) is optional; absent means `wordpress`. `plugin.version` is
+  the version of the site-side implementation.
+* `site.home_url` is the site's public URL and `site.site_url` the URL of the
+  application itself (they differ on WordPress installs in a subdirectory;
+  other platforms usually give the same value twice). `site.name` is the site
+  or application name.
 * `data` contains exactly one member per scope in `scopes_returned`.
 * A value that cannot be determined is `null` (never omitted, never guessed) and
   MAY have a matching entry in `warnings`.
@@ -627,9 +749,18 @@ The normative definition is the JSON Schema
   `null` for a single site or a network-wide portrait. In a network-wide
   portrait, `site` describes the main site.
 
-### 8.2 Data sources
+Schema history:
 
-The plugin reuses the same core APIs as *Site Health* (`get_plugins()`,
+| Version | Changes |
+|---|---|
+| `1.0.0` | Initial version. |
+| `1.1.0` | `platform` member (§2.2); `laravel`, `packages` and `storage` scopes (§7), `storage.files` being optional; `pgsql` and `sqlsrv` database engines; `database.options` may be `null` (WordPress-only members are `null` on other platforms). |
+
+### 8.2 Data sources (WordPress reference implementation)
+
+Every implementation reads its platform's own APIs and configuration, never
+executes shell commands and never makes network requests while building a
+portrait. On WordPress, the plugin reuses the same core APIs as *Site Health* (`get_plugins()`,
 `get_dropins()`, `get_core_updates()`, `WP_Debug_Data::get_mysql_var()`,
 `recurse_dirsize()`…) and returns typed values. It deliberately does **not**
 call `WP_Debug_Data::debug_data()` as a whole: that method performs an outbound
@@ -644,32 +775,38 @@ the cgroup files (`/sys/fs/cgroup/cpu.max`, `memory.max`) when readable, so
 that container limits are reported in addition to host values; otherwise the
 values are `null`. The plugin never executes shell commands.
 
-### 8.3 Minimisation rules (normative for the plugin)
+### 8.3 Minimisation rules (normative for every implementation)
 
 The portrait MUST NOT contain: passwords, salts, keys, tokens, database
-credentials or host, `wp-config.php` contents or constants other than the
-documented booleans, user logins, display names or e-mail addresses, post or
-comment content or titles, IP addresses, server hostnames, absolute file-system
-paths, the database table prefix, or environment variables.
+credentials, host or name, configuration file contents (`wp-config.php`,
+`.env`…) or configuration values other than the documented ones (booleans,
+versions, driver names, timezone, locale), user logins, display names or
+e-mail addresses, post or comment content or titles, IP addresses, server
+hostnames, absolute file-system paths, the database table prefix, environment
+variables (not even their names), URLs of third-party services or package
+repositories, queue or channel names, route URIs, scheduled commands or log
+contents.
 
 ### 8.4 Expensive values
 
-Directory sizes are computed with a time budget (default 10 s in total, filter
-`site_portrait_size_budget`) and cached for one hour (`computed_at` tells when).
+Directory sizes are computed with a time budget (default 10 s in total; on
+WordPress, filter `site_portrait_size_budget`) and cached for one hour
+(`computed_at` tells when).
 When the budget is exceeded the remaining sizes are `null`, with a `timeout`
 warning. In a network-wide portrait, per-site loops share a similar budget and
 report `partial` warnings when they stop early.
 
 ### 8.5 Extensibility
 
-The filter `site_portrait_scope_data` lets other plugins append data inside
-the `extensions` member of a scope object (namespaced by their slug). It cannot
-remove or alter core members, and the result is still subject to §8.3 review by
-whoever adds data.
+Implementations MAY let other code append data inside the `extensions` member
+of a scope object, namespaced by its slug (on WordPress, the filter
+`site_portrait_scope_data`). Such code cannot remove or alter core members,
+and the result is still subject to §8.3 review by whoever adds data.
 
 ## 9. Errors
 
-Error responses use WordPress' REST format and are signed like any response:
+Error responses use the WordPress REST error format on every platform
+(`code`, `message`, `data.status`) and are signed like any response:
 
 ```json
 { "code": "site_portrait_signature_expired", "message": "The request signature has expired.", "data": { "status": 401 } }
@@ -677,7 +814,7 @@ Error responses use WordPress' REST format and are signed like any response:
 
 | HTTP | `code` | Meaning |
 |---|---|---|
-| 404 | `rest_no_route` | No active pairing (routes not registered). |
+| 404 | `rest_no_route` | No active pairing (routes not registered). Other implementations may answer with another code or body; services treat any 404 from an endpoint as "pairing gone". |
 | 400 | `site_portrait_invalid_scope` | Unknown scope in `scopes`. |
 | 400 | `site_portrait_digest_mismatch` | `Content-Digest` does not match the body. |
 | 400 | `site_portrait_invalid_body` | Malformed JSON body (POST). |
@@ -725,9 +862,11 @@ Service-side endpoints (§4.4, §10.1) use OAuth-style errors:
 3. The site deletes its own key pair.
 
 `reason` is one of `revoked_by_site`, `plugin_uninstalled`, `key_compromised`.
-The plugin's `uninstall.php` sends `plugin_uninstalled` (best effort, 5 s
-timeout). Plain deactivation does **not** revoke: routes disappear while the
-plugin is inactive and come back on reactivation.
+`plugin_uninstalled` means the implementation is being removed (on WordPress,
+sent by the plugin's `uninstall.php`, best effort, 5 s timeout; other
+implementations send it from their documented removal step). On WordPress,
+plain deactivation does **not** revoke: routes disappear while the plugin is
+inactive and come back on reactivation.
 
 ### 10.2 Service-initiated
 
@@ -757,7 +896,7 @@ carried as an extra JWK member of `N`:
 1. The service publishes `N` (with an endorsement by the current key) in the
    discovery `jwks`, alongside the current key, for at least 7 days.
 2. It then signs requests with `N`.
-3. A site receiving an unknown `keyid` re-fetches discovery (at most once per hour by default, filter
+3. A site receiving an unknown `keyid` re-fetches discovery (at most once per hour by default; on WordPress, filter
    `site_portrait_key_refresh_interval`), pins every key that carries a valid endorsement by an already pinned
    key, and retries verification once.
 4. Keys that disappear from the discovery `jwks` are unpinned on the next
@@ -781,9 +920,9 @@ site key it already knows, and records `N`.
 Per pairing, sliding one-hour window; default **60 requests/hour** for all
 endpoints combined in `single` mode, and **60 + 2 × number of sites** in
 `network` mode so that every site can be listed and described once per hour
-(filter `site_portrait_rate_limit`). Exceeding it returns
+(configurable; on WordPress, filter `site_portrait_rate_limit`). Exceeding it returns
 429 with `Retry-After` (seconds). Failed authentication attempts are also
-limited per source IP (default 30/hour, filter `site_portrait_failure_limit`)
+limited per source IP (default 30/hour; on WordPress, filter `site_portrait_failure_limit`)
 to keep log noise bounded: once the limit is reached, further *failing*
 requests from that IP get 429. Correctly signed requests are never blocked by
 this limit, so an attacker sharing the service's IP (e.g. behind a reverse
@@ -792,8 +931,9 @@ proxy) cannot lock the service out.
 ### 12.2 IP allow-list
 
 Optional, configured by the administrator (one IP or CIDR per line, IPv4 and
-IPv6). The plugin checks `REMOTE_ADDR` only; sites behind a trusted reverse
-proxy can supply the client IP through the `site_portrait_client_ip` filter.
+IPv6). Implementations check the connection's source address only
+(`REMOTE_ADDR`); sites behind a trusted reverse proxy can supply the client IP
+explicitly (on WordPress, through the `site_portrait_client_ip` filter).
 Services SHOULD publish the IP ranges they call from (e.g. in their
 documentation) so administrators can use this feature.
 
@@ -801,7 +941,7 @@ documentation) so administrators can use this feature.
 
 Every request to the REST routes is logged: date (UTC), source IP, endpoint,
 `keyid`, requested/returned scopes, HTTP status and error code. The log is
-visible to administrators in the plugin settings, kept for 90 days (at most
+visible to administrators (on WordPress, in the plugin settings), kept for 90 days (at most
 10 000 entries, which also back the rate limiter) and deleted on uninstall.
 
 ## 13. Service implementation checklist
@@ -821,6 +961,8 @@ A compatible service must:
 - [ ] Use the `endpoints` URLs exactly as provided.
 - [ ] Respect `scopes_granted`, `429`/`Retry-After`, and treat `404` as "pairing
       gone".
+- [ ] Read `platform` (§2.2) to know which scopes to expect; treat an absent
+      `platform` as `wordpress` and accept unknown platform names and scopes.
 - [ ] Implement the revocation endpoint (§10.1) and optionally call `/revoke`
       (§6.4).
 - [ ] Verify response signatures (§5.2) — recommended.
@@ -829,7 +971,9 @@ A compatible service must:
 
 The repository ships a reference command-line client (`bin/reference-client`)
 that plays the service role and can be used as a starting point and for
-end-to-end tests.
+end-to-end tests of any site-side implementation. By default it advertises the
+scopes of every platform; `--scopes-supported` (or the `scopesSupported`
+option of `createService()`) restricts the list.
 
 ## 14. Security considerations
 
@@ -840,21 +984,23 @@ end-to-end tests.
 | Site database leaked (backup, SQL injection elsewhere) | Only the service **public** key is stored: the attacker cannot forge requests. They obtain the site private key, which only lets them sign responses / revocation notices as that site; the administrator can rotate or re-pair. |
 | Service database leaked | No credential grants admin access. If the service private key itself leaks, the attacker can read granted scopes (read-only) until the service rotates keys or administrators disconnect. Keep the key in a KMS. |
 | Network attacker | TLS everywhere; signatures over method, authority, path and query; replay protection via nonces and a 300 s window. |
-| Request replay to another site paired with the same service | `@authority` is covered and compared with `home_url()`. |
-| CSRF / login CSRF on pairing | WP nonce + `manage_options` + per-user pending state + `state` parameter. |
+| Request replay to another site paired with the same service | `@authority` is covered and compared with the site's configured URL (`home_url()` on WordPress). |
+| CSRF / login CSRF on pairing | Anti-CSRF token (WP nonce) + administrator check (`manage_options`) + per-user pending state + `state` parameter. |
 | Authorization-code interception | PKCE S256; code bound to `site_key_thumbprint`; token request signed with the site key. |
 | Someone pairs a site they do not own | The confirmation step (§4.5) requires the real site at `client_id` to return the `pairing_id` signed with the registered site key. |
 | Subsite administrator in a multisite network discloses network-wide data | Pairing is only possible in `network` mode by a super admin (§2.1). |
 | Malicious or compromised service | Read-only API, admin-chosen scopes, data minimisation (§8.3), access log, IP allow-list, one-click revocation. No code or configuration is ever accepted from the service. |
-| SSRF via service URL | Only administrators can enter it; `wp_safe_remote_*` blocks private ranges; no redirects; HTTPS only; response size capped. |
+| SSRF via service URL | Only administrators can enter it; private ranges are blocked (`wp_safe_remote_*` on WordPress); no redirects; HTTPS only; response size capped. |
 | Malicious discovery content | All strings are escaped on display; URLs must be HTTPS and same-origin; size limit. |
 | Brute force / log flooding | Rate limits per pairing and per IP; capped log. |
 
 ### 14.2 Private key storage on the site
 
-The site private key is stored in a non-autoloaded option. WordPress offers no
-better secret store; the impact of its disclosure is limited as described
-above. Uninstalling or disconnecting deletes it.
+On WordPress the site private key is stored in a non-autoloaded option:
+WordPress offers no better secret store, and the impact of its disclosure is
+limited as described above. Implementations on platforms with an application
+encryption key (such as Laravel's `APP_KEY`) SHOULD encrypt it at rest.
+Uninstalling or disconnecting deletes it.
 
 ### 14.3 Clock skew
 
@@ -863,7 +1009,8 @@ Both parties MUST keep their clocks synchronised. `/status` returns
 
 ### 14.4 Cryptographic implementation
 
-The plugin uses `sodium_crypto_sign_detached()` / `_verify_detached()` and
+Implementations MUST use an established Ed25519 library. The WordPress plugin
+uses `sodium_crypto_sign_detached()` / `_verify_detached()` and
 `random_bytes()`, provided by PHP's sodium extension or WordPress' bundled
 `sodium_compat` polyfill. No custom cryptography is implemented; RFC 9421 is
 only used to define *what* is signed.
@@ -876,17 +1023,22 @@ source IP addresses kept in the site's own access log.
 
 ### 14.6 Development mode
 
-For local testing only, the plugin accepts `http` service URLs and private IP
-addresses when **all** of the following hold: the constant
-`SITE_PORTRAIT_DEV_MODE` is `true`, `wp_get_environment_type()` is `local` or
-`development`, and both the site and the service hosts end in `.test` or
-`.localhost`, or are `localhost`, `127.0.0.1` or `[::1]`. The settings page shows a permanent warning
-while it is active.
+For local testing only, an implementation MAY accept `http` service URLs and
+private IP addresses when **all** of the following hold: development mode is
+explicitly enabled (on WordPress, the constant `SITE_PORTRAIT_DEV_MODE` is
+`true`), the platform's environment type is `local` or `development`
+(`wp_get_environment_type()` on WordPress), and both the site and the service
+hosts end in `.test` or `.localhost`, or are `localhost`, `127.0.0.1` or
+`[::1]`. The administration shows a permanent warning while it is active.
 
 ## 15. Test vectors
 
 All keys below are derived from fixed 32-byte seeds and MUST NOT be used
-outside tests.
+outside tests. The same vectors are published in machine-readable form in
+[`test-vectors.json`](test-vectors.json) (seeds, signature bases, headers);
+the reference implementations' test suites read that file. The request path
+is the WordPress one, but the vectors apply to every implementation: only the
+inputs matter.
 
 | Key | Seed | `x` | `kid` |
 |---|---|---|---|
@@ -947,7 +1099,8 @@ signature = 2whhMLNOI50wh8SQIwO-ka3zfQUduDeJYsuolyt7xJfMEsjlwPwEatNVosebORX9LcMc
 
 ## 16. Comparison with Application Passwords
 
-WordPress core ships an "Authorize Application" flow
+This section concerns the WordPress implementation. WordPress core ships an
+"Authorize Application" flow
 (`/wp-admin/authorize-application.php`) that hands an Application Password to an
 external app. It was considered and rejected for this use case:
 

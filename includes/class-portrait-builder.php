@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Portrait_Builder {
 
-	const SCHEMA_VERSION = '1.0.0';
+	const SCHEMA_VERSION = '1.1.0';
 
 	/**
 	 * Builds the portrait.
@@ -67,6 +67,7 @@ final class Portrait_Builder {
 			'mode'               => Plugin::mode(),
 			'site_id'            => $site_id,
 			'site'               => $site,
+			'platform'           => Plugin::platform(),
 			'plugin'             => array( 'version' => SITE_PORTRAIT_VERSION ),
 			'scopes_returned'    => $scopes,
 			'scopes_denied'      => $denied,

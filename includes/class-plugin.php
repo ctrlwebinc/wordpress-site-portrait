@@ -88,6 +88,20 @@ final class Plugin {
 	}
 
 	/**
+	 * Platform member of the protocol (PROTOCOL.md §2.2): name and version of
+	 * the software the site runs on, plus the detected WordPress distribution
+	 * (best effort). Sent in the token request, /status and the portrait.
+	 *
+	 * @return array
+	 */
+	public static function platform() {
+		return array(
+			'name'    => 'wordpress',
+			'version' => (string) get_bloginfo( 'version' ),
+		) + Platform_Detector::detect();
+	}
+
+	/**
 	 * Capability required to manage the plugin.
 	 *
 	 * @return string

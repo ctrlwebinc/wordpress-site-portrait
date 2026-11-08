@@ -216,6 +216,7 @@ final class Rest_Api {
 
 		return array(
 			'protocol_version' => '1',
+			'platform'         => Plugin::platform(),
 			'plugin_version'   => SITE_PORTRAIT_VERSION,
 			'pairing_id'       => $pairing['pairing_id'],
 			'mode'             => Plugin::mode(),

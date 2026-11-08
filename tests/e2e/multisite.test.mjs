@@ -64,6 +64,7 @@ test('status reports network mode', async () => {
   assert.equal(r.status, 200);
   assert.equal(r.json.mode, 'network');
   assert.equal(r.json.sites_count, 2);
+  assert.equal(r.json.platform.name, 'wordpress');
 });
 
 test('sites lists every site with counts', async () => {

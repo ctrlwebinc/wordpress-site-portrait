@@ -29,6 +29,7 @@ async function pair(scopes = ALL_SCOPES) {
   page = await admin.request(f.action, { method: 'POST', form: { ...f.fields, service_url: svc.url } });
   assert.match(page.text, /Connect to Site Portrait reference service\?/);
   assert.match(page.text, /Database size drives storage/, 'scope reason from discovery is shown');
+  assert.doesNotMatch(page.text, /value="(laravel|packages|storage)"/, 'scopes of other platforms are not offered');
 
   f = formFields(page.text, 'connect');
   const form = new URLSearchParams(f.fields);
@@ -73,6 +74,11 @@ test('administrator pairs the site and the service confirms it', async () => {
   pairing = await pair();
   assert.equal(pairing.mode, 'single');
   assert.deepEqual(pairing.scopes, ALL_SCOPES);
+  // The service advertises the Laravel scopes too; the plugin ignores them.
+  assert.ok(svc.scopesSupported.includes('laravel'));
+  assert.equal(pairing.platform.name, 'wordpress', 'token request carries the platform');
+  assert.match(pairing.platform.version, /^\d+\.\d+/);
+  assert.match(pairing.implementation_version, /^\d+\.\d+\.\d+/);
   const page = await admin.request(SETTINGS);
   assert.match(page.text, new RegExp(pairing.pairing_id));
   assert.doesNotMatch(page.text, /waiting for the service to confirm/);
@@ -86,6 +92,8 @@ test('status is signed and reports the grant', async () => {
   assert.equal(r.headers['cache-control'], 'no-store');
   assert.equal(r.json.pairing_id, pairing.pairing_id);
   assert.deepEqual(r.json.scopes_granted, ALL_SCOPES);
+  assert.deepEqual(r.json.scopes_available, ALL_SCOPES);
+  assert.deepEqual(r.json.platform, pairing.platform);
   assert.ok(Math.abs(r.json.server_time - Date.now() / 1000) < 60);
 });
 
@@ -96,6 +104,9 @@ test('portrait matches the JSON schema and contains no sensitive data', async ()
   assert.ok(validatePortrait(r.json), JSON.stringify(validatePortrait.errors, null, 2));
   assert.deepEqual(r.json.scopes_returned, ALL_SCOPES);
   assert.deepEqual(Object.keys(r.json.data), ALL_SCOPES);
+  assert.equal(r.json.schema_version, '1.1.0');
+  // Playground: classic install, no Composer.
+  assert.deepEqual(r.json.platform, { name: 'wordpress', version: r.json.data.core.wp_version, distribution: null, distribution_version: null, composer_managed: false, acorn: null });
 
   const text = r.text;
   assert.doesNotMatch(text, /\/wordpress\//, 'no absolute paths');

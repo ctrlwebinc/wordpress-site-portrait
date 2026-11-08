@@ -174,6 +174,7 @@ final class Pairing {
 				'endpoints'        => $endpoints,
 				'mode'             => Plugin::mode(),
 				'scopes'           => $pending['scopes'],
+				'platform'         => Plugin::platform(),
 				'plugin_version'   => SITE_PORTRAIT_VERSION,
 				'protocol_version' => '1',
 			),

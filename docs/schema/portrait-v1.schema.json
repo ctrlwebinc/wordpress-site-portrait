@@ -3,7 +3,7 @@
   "$id": "urn:site-portrait:portrait:1",
   "$comment": "SPDX-License-Identifier: CC-BY-4.0. Part of the Site Portrait protocol specification (docs/PROTOCOL.md).",
   "title": "Site Portrait document (schema 1.x)",
-  "description": "Body of GET /site-portrait/v1/portrait. See docs/PROTOCOL.md section 8. Values that cannot be determined are null, never omitted. Sizes are bytes, durations seconds unless the name says otherwise. Minor schema versions only add optional members; receivers must ignore unknown members.",
+  "description": "Body of GET /site-portrait/v1/portrait. See docs/PROTOCOL.md section 8. Values that cannot be determined are null, never omitted. Sizes are bytes, durations seconds unless the name says otherwise. Minor schema versions only add optional members; receivers must ignore unknown members. Version 1.1.0 added the platform member and the laravel, packages and storage scopes.",
   "type": "object",
   "required": ["schema_version", "protocol_version", "generated_at", "generation_time_ms", "pairing_id", "mode", "site_id", "site", "plugin", "scopes_returned", "scopes_denied", "data", "warnings"],
   "properties": {
@@ -23,10 +23,12 @@
         "name": { "type": "string" }
       }
     },
+    "platform": { "$ref": "#/$defs/platform" },
     "plugin": {
       "type": "object",
+      "description": "The site-side implementation of the protocol (WordPress plugin, Laravel package…), not the platform.",
       "required": ["version"],
-      "properties": { "version": { "type": "string" } }
+      "properties": { "version": { "type": "string", "description": "Version of the site-side implementation." } }
     },
     "scopes_returned": { "$ref": "#/$defs/scope_list" },
     "scopes_denied": { "$ref": "#/$defs/scope_list" },
@@ -39,7 +41,10 @@
         "server": { "oneOf": [{ "$ref": "#/$defs/server" }, { "type": "null" }] },
         "database": { "oneOf": [{ "$ref": "#/$defs/database" }, { "type": "null" }] },
         "content": { "oneOf": [{ "$ref": "#/$defs/content" }, { "type": "null" }] },
-        "users_counts": { "oneOf": [{ "$ref": "#/$defs/users_counts" }, { "type": "null" }] }
+        "users_counts": { "oneOf": [{ "$ref": "#/$defs/users_counts" }, { "type": "null" }] },
+        "laravel": { "oneOf": [{ "$ref": "#/$defs/laravel" }, { "type": "null" }] },
+        "packages": { "oneOf": [{ "$ref": "#/$defs/packages" }, { "type": "null" }] },
+        "storage": { "oneOf": [{ "$ref": "#/$defs/storage" }, { "type": "null" }] }
       }
     },
     "warnings": {
@@ -65,8 +70,21 @@
     "nbytes": { "type": ["integer", "null"], "minimum": 0, "description": "Size in bytes, or null if unknown. -1 is never used; unlimited values are reported as null with an 'unlimited' flag where relevant." },
     "extensions": {
       "type": "object",
-      "description": "Data added by third-party plugins through the site_portrait_scope_data filter, keyed by plugin slug.",
+      "description": "Data added by third-party code through the implementation's extension mechanism (e.g. the site_portrait_scope_data filter on WordPress), keyed by the extension's slug.",
       "additionalProperties": { "type": "object" }
+    },
+    "platform": {
+      "type": "object",
+      "description": "Software the site runs on (schema 1.1.0). When absent, the platform is wordpress.",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$", "description": "Lower-case identifier. Defined values: wordpress, laravel." },
+        "version": { "$ref": "#/$defs/nstr", "description": "Platform version (WordPress or Laravel framework version)." },
+        "distribution": { "$ref": "#/$defs/nstr", "description": "WordPress only, best effort: bedrock, radicle, wordplate, wpstarter, composer (core installed by Composer, no known distribution), or null (classic install or not detected). Receivers must ignore unknown values." },
+        "distribution_version": { "$ref": "#/$defs/nstr", "description": "WordPress only, best effort: version of the distribution's package when known." },
+        "composer_managed": { "type": "boolean", "description": "WordPress only, best effort: the core is installed by Composer." },
+        "acorn": { "$ref": "#/$defs/nstr", "description": "WordPress only, best effort: installed version of roots/acorn, or null." }
+      }
     },
     "update": {
       "type": ["object", "null"],
@@ -361,7 +379,7 @@
         "disk": {
           "type": "object",
           "required": ["free", "total"],
-          "description": "Volume holding wp-content.",
+          "description": "Volume holding the site's writable data (wp-content on WordPress, storage on Laravel).",
           "properties": {
             "free": { "$ref": "#/$defs/nbytes" },
             "total": { "$ref": "#/$defs/nbytes" }
@@ -387,7 +405,7 @@
       "type": "object",
       "required": ["engine", "server_version", "client", "charset", "collate", "size", "tables", "options", "transients_count", "variables"],
       "properties": {
-        "engine": { "enum": ["mysql", "mariadb", "sqlite", "other"] },
+        "engine": { "enum": ["mysql", "mariadb", "sqlite", "pgsql", "sqlsrv", "other"], "description": "pgsql and sqlsrv were added in schema 1.1.0." },
         "server_version": { "$ref": "#/$defs/nstr" },
         "client": { "$ref": "#/$defs/nstr", "description": "PHP client extension and version, e.g. mysqlnd 8.3.12." },
         "charset": { "$ref": "#/$defs/nstr" },
@@ -406,7 +424,7 @@
           "required": ["count", "site_count", "largest"],
           "properties": {
             "count": { "$ref": "#/$defs/nint", "description": "All tables in the database schema." },
-            "site_count": { "$ref": "#/$defs/nint", "description": "Tables using this site's prefix." },
+            "site_count": { "$ref": "#/$defs/nint", "description": "WordPress only: tables using this site's prefix. null on other platforms." },
             "largest": {
               "type": "array",
               "maxItems": 10,
@@ -414,7 +432,7 @@
                 "type": "object",
                 "required": ["name", "engine", "rows", "data", "index"],
                 "properties": {
-                  "name": { "type": "string", "description": "Table name with the site prefix removed (e.g. posts, wc_orders)." },
+                  "name": { "type": "string", "description": "Table name with the site or connection prefix removed (e.g. posts, wc_orders, jobs)." },
                   "engine": { "$ref": "#/$defs/nstr" },
                   "rows": { "$ref": "#/$defs/nint", "description": "Approximate (information_schema)." },
                   "data": { "$ref": "#/$defs/nbytes" },
@@ -425,7 +443,8 @@
           }
         },
         "options": {
-          "type": "object",
+          "type": ["object", "null"],
+          "description": "WordPress only: the options table. null on other platforms.",
           "required": ["count", "autoload_count", "autoload_size"],
           "properties": {
             "count": { "$ref": "#/$defs/nint" },
@@ -433,7 +452,7 @@
             "autoload_size": { "$ref": "#/$defs/nbytes" }
           }
         },
-        "transients_count": { "$ref": "#/$defs/nint" },
+        "transients_count": { "$ref": "#/$defs/nint", "description": "WordPress only. null on other platforms." },
         "variables": {
           "type": "object",
           "description": "Selected server variables relevant to sizing.",
@@ -535,6 +554,173 @@
           "additionalProperties": { "type": "integer", "minimum": 0 }
         },
         "network_total": { "$ref": "#/$defs/nint", "description": "Multisite only: users in the whole network (each user once)." },
+        "extensions": { "$ref": "#/$defs/extensions" }
+      }
+    },
+
+    "laravel": {
+      "type": "object",
+      "description": "Laravel platform scope (schema 1.1.0). Driver names only, never connection settings, hosts, queue or channel names, route URIs or scheduled commands.",
+      "required": ["version", "environment_type", "debug", "maintenance", "timezone", "locale", "https", "optimizations", "drivers", "octane", "ecosystem", "queue", "schedule", "routes_count", "commands_count"],
+      "properties": {
+        "version": { "$ref": "#/$defs/nstr", "description": "Laravel framework version, e.g. 12.30.1." },
+        "environment_type": { "enum": ["production", "staging", "development", "local", null], "description": "APP_ENV mapped to the common vocabulary: production, staging and local as is, dev and development to development; any other value (e.g. testing) is null." },
+        "debug": { "$ref": "#/$defs/nbool", "description": "app.debug." },
+        "maintenance": { "$ref": "#/$defs/nbool", "description": "The application is in maintenance mode." },
+        "timezone": { "$ref": "#/$defs/nstr", "description": "app.timezone (IANA name)." },
+        "locale": { "$ref": "#/$defs/nstr", "description": "app.locale." },
+        "https": { "$ref": "#/$defs/nbool", "description": "APP_URL uses https." },
+        "optimizations": {
+          "type": "object",
+          "required": ["config_cached", "routes_cached", "events_cached"],
+          "properties": {
+            "config_cached": { "$ref": "#/$defs/nbool" },
+            "routes_cached": { "$ref": "#/$defs/nbool" },
+            "events_cached": { "$ref": "#/$defs/nbool" }
+          }
+        },
+        "drivers": {
+          "type": "object",
+          "description": "Name of the driver of each default connection or store (e.g. redis, database, file, s3, log). Never the connection name or its settings.",
+          "required": ["cache", "session", "queue", "mail", "broadcasting", "filesystem", "filesystem_cloud", "log"],
+          "properties": {
+            "cache": { "$ref": "#/$defs/nstr" },
+            "session": { "$ref": "#/$defs/nstr" },
+            "queue": { "$ref": "#/$defs/nstr" },
+            "mail": { "$ref": "#/$defs/nstr" },
+            "broadcasting": { "$ref": "#/$defs/nstr" },
+            "filesystem": { "$ref": "#/$defs/nstr" },
+            "filesystem_cloud": { "$ref": "#/$defs/nstr" },
+            "log": { "$ref": "#/$defs/nstr" }
+          }
+        },
+        "octane": {
+          "type": "object",
+          "required": ["enabled", "server"],
+          "properties": {
+            "enabled": { "type": "boolean", "description": "Laravel Octane is installed and configured." },
+            "server": { "$ref": "#/$defs/nstr", "description": "octane.server: swoole, roadrunner, frankenphp, or null." }
+          }
+        },
+        "ecosystem": {
+          "type": "array",
+          "uniqueItems": true,
+          "description": "First-party and well-known packages detected, as short lower-case identifiers (e.g. horizon, pulse, telescope, reverb, nova, filament, livewire, inertia).",
+          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$" }
+        },
+        "queue": {
+          "type": "object",
+          "required": ["pending_jobs", "failed_jobs", "batches"],
+          "properties": {
+            "pending_jobs": { "$ref": "#/$defs/nint", "description": "Jobs waiting on the default queue of the default connection." },
+            "failed_jobs": { "$ref": "#/$defs/nint" },
+            "batches": { "$ref": "#/$defs/nint", "description": "Rows in the job batches table." }
+          }
+        },
+        "schedule": {
+          "type": "object",
+          "required": ["tasks_count", "by_frequency"],
+          "properties": {
+            "tasks_count": { "$ref": "#/$defs/nint" },
+            "by_frequency": {
+              "type": ["object", "null"],
+              "description": "Number of scheduled tasks per cron expression (five fields separated by single spaces, e.g. \"* * * * *\"); tasks that repeat more than once a minute are counted under \"sub_minute\". Never the command or its arguments.",
+              "additionalProperties": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "routes_count": { "$ref": "#/$defs/nint" },
+        "commands_count": { "$ref": "#/$defs/nint", "description": "Registered Artisan commands." },
+        "extensions": { "$ref": "#/$defs/extensions" }
+      }
+    },
+
+    "package_item": {
+      "type": "object",
+      "required": ["name", "version", "type", "direct", "dev"],
+      "properties": {
+        "name": { "type": "string", "description": "Composer package name, e.g. laravel/framework." },
+        "version": { "$ref": "#/$defs/nstr", "description": "Installed (pretty) version, e.g. v12.30.1 or dev-main." },
+        "type": { "$ref": "#/$defs/nstr", "description": "Composer package type, e.g. library." },
+        "direct": { "type": "boolean", "description": "Listed in the root require or require-dev." },
+        "dev": { "type": "boolean", "description": "Installed only as a development dependency." }
+      }
+    },
+    "packages": {
+      "type": "object",
+      "description": "Installed Composer packages (schema 1.1.0). Never repository or dist URLs, which may embed tokens.",
+      "required": ["counts", "items", "platform"],
+      "properties": {
+        "counts": {
+          "type": "object",
+          "description": "Counts include packages the administrator chose to hide from items.",
+          "required": ["total", "direct", "dev", "direct_dev"],
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "direct": { "type": "integer", "minimum": 0, "description": "Direct dependencies (require and require-dev)." },
+            "dev": { "type": "integer", "minimum": 0, "description": "Development dependencies, direct or not." },
+            "direct_dev": { "type": "integer", "minimum": 0, "description": "Direct development dependencies (require-dev)." }
+          }
+        },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/package_item" } },
+        "platform": {
+          "type": "object",
+          "description": "Platform requirements of the root package.",
+          "required": ["php", "extensions"],
+          "properties": {
+            "php": { "$ref": "#/$defs/nstr", "description": "PHP version constraint, e.g. ^8.2." },
+            "extensions": { "type": "array", "uniqueItems": true, "description": "Required PHP extensions, lower-case, without the ext- prefix (same form as server.php.extensions).", "items": { "type": "string" } }
+          }
+        },
+        "extensions": { "$ref": "#/$defs/extensions" }
+      }
+    },
+
+    "storage": {
+      "type": "object",
+      "description": "Sizes of the application's directories and disks (schema 1.1.0), computed with a time budget and cached (section 8.4).",
+      "required": ["sizes", "disks"],
+      "properties": {
+        "sizes": {
+          "type": "object",
+          "required": ["app", "app_public", "logs", "framework_cache", "framework_sessions", "framework_views", "public", "vendor", "node_modules", "computed_at"],
+          "properties": {
+            "app": { "$ref": "#/$defs/nbytes", "description": "storage/app, including app_public." },
+            "app_public": { "$ref": "#/$defs/nbytes", "description": "storage/app/public." },
+            "logs": { "$ref": "#/$defs/nbytes", "description": "storage/logs." },
+            "framework_cache": { "$ref": "#/$defs/nbytes", "description": "storage/framework/cache." },
+            "framework_sessions": { "$ref": "#/$defs/nbytes", "description": "storage/framework/sessions." },
+            "framework_views": { "$ref": "#/$defs/nbytes", "description": "storage/framework/views." },
+            "public": { "$ref": "#/$defs/nbytes", "description": "public directory." },
+            "vendor": { "$ref": "#/$defs/nbytes" },
+            "node_modules": { "$ref": "#/$defs/nbytes", "description": "null when absent." },
+            "computed_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        },
+        "files": {
+          "type": "object",
+          "description": "Optional. Number of regular files, subdirectories included, symbolic links not followed. Counted during the same walk as sizes, with the same time budget and cache; null when the walk was interrupted. Lets services estimate media volume when a size is null.",
+          "required": ["app", "app_public", "public", "computed_at"],
+          "properties": {
+            "app": { "$ref": "#/$defs/nint", "description": "storage/app, including app_public." },
+            "app_public": { "$ref": "#/$defs/nint", "description": "storage/app/public." },
+            "public": { "$ref": "#/$defs/nint", "description": "public directory (the public/storage link is not followed)." },
+            "computed_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        },
+        "disks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "driver", "default", "size"],
+            "properties": {
+              "name": { "type": "string", "description": "Disk name from the filesystems configuration." },
+              "driver": { "$ref": "#/$defs/nstr", "description": "e.g. local, s3, ftp." },
+              "default": { "type": "boolean", "description": "The default disk." },
+              "size": { "$ref": "#/$defs/nbytes", "description": "Only for local disks; null for remote disks (never listed)." }
+            }
+          }
+        },
         "extensions": { "$ref": "#/$defs/extensions" }
       }
     }

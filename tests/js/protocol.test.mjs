@@ -1,58 +1,67 @@
-// Checks bin/lib/protocol.mjs against the test vectors in docs/PROTOCOL.md §15
-// and round trips. Run with: npm test
+// Checks bin/lib/protocol.mjs against the machine-readable test vectors
+// (docs/test-vectors.json, PROTOCOL.md §15) and round trips. Run with: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import * as sp from '../../bin/lib/protocol.mjs';
 
-const seedKey = (byte) => {
-  const der = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), Buffer.alloc(32, byte)]);
+const V = JSON.parse(fs.readFileSync(new URL('../../docs/test-vectors.json', import.meta.url), 'utf8'));
+
+const seedKey = (name) => {
+  const der = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), Buffer.from(V.keys[name].seed_hex, 'hex')]);
   return sp.keyFromPkcs8(der.toString('base64'));
 };
-const service = seedKey(1);
-const site = seedKey(2);
-const REQ_SIG = 'BCOf82rkgP/WyuEMhL+8EJn9P9Z8Z0quKfLY2ghLzkiuICoNAMWZVBhJYbbelfkE/zEbDgzBXlqyFAwD50oNBA==';
+const sfBytes = (header) => Buffer.from(/^sp=:([^:]*):$/.exec(header)[1], 'base64');
+// Checks that the published signature base is exactly what was signed.
+const baseVerifies = (base, header, key) => crypto.verify(null, Buffer.from(base), sp.publicKeyFromJwk(sp.publicJwk(key)), sfBytes(header));
+
+const service = seedKey('service');
+const site = seedKey('site');
+const REQ = V.request;
+const RES = V.response;
+const reqSig = sfBytes(REQ.headers.Signature);
 
 test('key vectors', () => {
-  assert.equal(service.x, 'iojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1w');
-  assert.equal(service.kid, 'UDDReOZl1ipXAfp9wYsm13sDBMK5og--QWdBjzuf6o4');
-  assert.equal(site.kid, 'aVBtapLd11SUVKIMGJfPzOEDuN0sXcmzJQNVT-_sKEU');
-  assert.equal(sp.pkceChallenge('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk'), 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM');
+  for (const name of Object.keys(V.keys)) {
+    const key = seedKey(name);
+    assert.equal(key.x, V.keys[name].x, name);
+    assert.equal(key.kid, V.keys[name].kid, name);
+  }
+  assert.equal(sp.pkceChallenge(V.pkce.code_verifier), V.pkce.code_challenge);
 });
 
 test('request vector', () => {
-  const h = sp.signRequest('GET', 'https://example.com/wp-json/site-portrait/v1/portrait?scopes=core,plugins', {}, service, {
-    now: 1792400000,
-    nonce: 'bWFkZS1mb3ItdGVzdGluZw',
-  });
-  assert.equal(h.Signature, `sp=:${REQ_SIG}:`);
-  const ok = sp.verifyRequest(
-    { method: 'GET', url: 'https://example.com/wp-json/site-portrait/v1/portrait?scopes=core,plugins', headers: { 'Signature-Input': h['Signature-Input'], Signature: h.Signature } },
-    (kid) => (kid === service.kid ? sp.publicJwk(service) : null),
-    1792400100,
-  );
-  assert.equal(ok.nonce, 'bWFkZS1mb3ItdGVzdGluZw');
+  assert.ok(baseVerifies(REQ.signature_base, REQ.headers.Signature, service));
+  const h = sp.signRequest(REQ.method, REQ.url, {}, service, { now: REQ.created, nonce: REQ.nonce });
+  assert.equal(h['Signature-Input'], REQ.headers['Signature-Input']);
+  assert.equal(h.Signature, REQ.headers.Signature);
+  const ok = sp.verifyRequest({ method: REQ.method, url: REQ.url, headers: REQ.headers }, (kid) => (kid === service.kid ? sp.publicJwk(service) : null), REQ.verify_at);
+  assert.equal(ok.nonce, REQ.nonce);
 });
 
 test('response vector', () => {
-  const h = sp.signResponse(200, 'application/json; charset=UTF-8', '{"ok":true}', Buffer.from(REQ_SIG, 'base64'), site, 1792400001);
-  assert.equal(h.Signature, 'sp=:RB+R308P9gAS41M/lWK4oVEiAGNAuSReP3aOzmo55wNQIbGs9V7R2G10u9kagVAP8WMv2Q3vAa1UBGetZtQZDQ==:');
-  const kid = sp.verifyResponse(200, { ...h, 'Content-Type': 'application/json; charset=UTF-8' }, '{"ok":true}', Buffer.from(REQ_SIG, 'base64'), () => sp.publicJwk(site));
-  assert.equal(kid, site.kid);
-  const headers = { ...h, 'Content-Type': 'application/json; charset=UTF-8' };
-  const reqSig = Buffer.from(REQ_SIG, 'base64');
+  assert.ok(baseVerifies(RES.signature_base, RES.headers.Signature, site));
+  assert.equal(sp.contentDigest(RES.body), RES.headers['Content-Digest']);
+  const h = sp.signResponse(RES.status, RES.content_type, RES.body, reqSig, site, RES.created);
+  assert.equal(h['Signature-Input'], RES.headers['Signature-Input']);
+  assert.equal(h.Signature, RES.headers.Signature);
+  const headers = { ...RES.headers, 'Content-Type': RES.content_type };
+  assert.equal(sp.verifyResponse(RES.status, headers, RES.body, reqSig, () => sp.publicJwk(site)), site.kid);
   assert.throws(() => sp.verifyResponse(200, headers, '{"ok":false}', reqSig, () => sp.publicJwk(site)), { code: 'site_portrait_digest_mismatch' });
   // A response to a signed request must be bound to it.
-  const unbound = { ...sp.signResponse(200, 'application/json; charset=UTF-8', '{"ok":true}', null, site), 'Content-Type': 'application/json; charset=UTF-8' };
-  assert.throws(() => sp.verifyResponse(200, unbound, '{"ok":true}', reqSig, () => sp.publicJwk(site)), { code: 'site_portrait_signature_malformed' });
-  assert.equal(sp.verifyResponse(200, unbound, '{"ok":true}', null, () => sp.publicJwk(site)), site.kid);
+  const unbound = { ...sp.signResponse(200, RES.content_type, RES.body, null, site), 'Content-Type': RES.content_type };
+  assert.throws(() => sp.verifyResponse(200, unbound, RES.body, reqSig, () => sp.publicJwk(site)), { code: 'site_portrait_signature_malformed' });
+  assert.equal(sp.verifyResponse(200, unbound, RES.body, null, () => sp.publicJwk(site)), site.kid);
 });
 
 test('endorsement vector', () => {
-  const next = seedKey(3);
-  const e = sp.endorse(next.kid, service);
-  assert.equal(e.sig, '2whhMLNOI50wh8SQIwO-ka3zfQUduDeJYsuolyt7xJfMEsjlwPwEatNVosebORX9LcMcoGiCOvfF6qI8QJQfBA');
-  assert.ok(sp.isEndorsed({ ...sp.publicJwk(next), endorsements: [e] }, new Map([[service.kid, sp.publicJwk(service)]])));
+  const signer = seedKey(V.endorsement.signer);
+  const next = seedKey(V.endorsement.endorsed);
+  assert.equal(V.endorsement.message, sp.ENDORSEMENT_PREFIX + next.kid);
+  const e = sp.endorse(next.kid, signer);
+  assert.equal(e.sig, V.endorsement.sig);
+  assert.ok(sp.isEndorsed({ ...sp.publicJwk(next), endorsements: [e] }, new Map([[signer.kid, sp.publicJwk(signer)]])));
   assert.ok(!sp.isEndorsed({ ...sp.publicJwk(next), endorsements: [e] }, new Map([[site.kid, sp.publicJwk(site)]])));
 });
 
